@@ -1,0 +1,115 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Brand Color Scheme Tokens */
+    --primary: 31 64 114;            /* #1F4072 Deep Federation Navy */
+    --primary-foreground: 255 255 255;
+    
+    --secondary: 255 246 240;        /* #FFF6F0 Soft Cream / Peach Linen */
+    --secondary-foreground: 31 64 114;
+    
+    --accent-blue: 31 64 114;        /* #1F4072 Primary Blue Tint */
+    --card-sand: 232 228 220;        /* #E8E4DC Warm Minimalist Sand */
+
+    --background: 255 246 240;       /* #FFF6F0 Warm Off-White Body */
+    --foreground: 15 23 42;          /* Slate 900 */
+    --muted: 241 245 249;            /* Slate 100 */
+    --muted-foreground: 100 116 139;    /* Slate 500 */
+    --border: 230 220 212;           /* Subtle warm border */
+    --card: 255 255 255;
+    --card-foreground: 15 23 42;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    background-color: #FFF6F0;
+    color: #0F172A;
+    font-family: 'Fredoka', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    font-weight: 400;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+}
+
+/* Primary Headings & Titles - Luckiest Guy */
+.font-display, .font-heading {
+  font-family: 'Luckiest Guy', cursive, sans-serif;
+  letter-spacing: 0.02em;
+}
+
+/* Secondary Text Font - Fredoka (Regular / Normal weight 400) */
+.font-secondary {
+  font-family: 'Fredoka', sans-serif;
+  font-weight: 400;
+}
+
+/* Minimalist Brand Accent Header */
+.font-brand {
+  font-family: 'Luckiest Guy', cursive, monospace;
+  letter-spacing: 0.02em;
+}
+
+/* Swiss Minimalist Elevation & Clean Borders */
+.minimal-card {
+  background: #FFFFFF;
+  border: 1px solid #E2E8F0;
+  border-radius: 1.25rem;
+  box-shadow: 0 2px 4px 0 rgba(0, 0, 0, 0.02);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.15s ease;
+}
+
+.minimal-card:hover {
+  border-color: #1F4072;
+  box-shadow: 0 8px 24px 0 rgba(31, 64, 114, 0.08);
+}
+
+/* Global Scrollbar Removal: functional scrolling without visible scrollbars */
+* {
+  -ms-overflow-style: none !important;  /* IE and Edge */
+  scrollbar-width: none !important;     /* Firefox */
+}
+
+*::-webkit-scrollbar,
+html::-webkit-scrollbar,
+body::-webkit-scrollbar {
+  display: none !important;             /* Chrome, Safari, Webkit */
+  width: 0px !important;
+  height: 0px !important;
+  background: transparent !important;
+}
+
+@layer utilities {
+  .no-scrollbar::-webkit-scrollbar,
+  .scrollbar-none::-webkit-scrollbar {
+    display: none !important;
+    width: 0px !important;
+    height: 0px !important;
+  }
+  .no-scrollbar,
+  .scrollbar-none {
+    -ms-overflow-style: none !important;
+    scrollbar-width: none !important;
+  }
+}
+
+/* Accessibility: Visible High-Contrast Keyboard Focus */
+*:focus-visible {
+  outline: 2px solid #1F4072 !important;
+  outline-offset: 2px !important;
+}
+
+/* Accessibility: Respect Reduced Motion Preferences */
+@media (prefers-reduced-motion: reduce) {
+  *, ::before, ::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

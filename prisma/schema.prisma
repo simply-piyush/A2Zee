@@ -1,0 +1,264 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+
+// ==========================
+// ENUMS
+// ==========================
+
+enum UserRole {
+  CUSTOMER
+  WORKER
+  ADMIN
+}
+
+enum VerificationStatus {
+  PENDING
+  VERIFIED
+  REJECTED
+}
+
+enum AvailabilityStatus {
+  AVAILABLE
+  BUSY
+  OFFLINE
+}
+
+enum BookingStatus {
+  PENDING
+  ACCEPTED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+enum AdditionalStatus {
+  NONE
+  PENDING
+  ACCEPTED
+  REJECTED
+}
+
+enum PaymentStatus {
+  PENDING
+  SUCCESS
+  FAILED
+}
+
+
+// ==========================
+// 1. USERS
+// ==========================
+
+model User {
+  id           String   @id @default(uuid()) @db.Uuid
+  fullName     String   @db.VarChar(100)
+  email        String   @unique @db.VarChar(255)
+  phone        String   @unique @db.VarChar(20)
+  passwordHash String   @db.VarChar(255)
+  role         UserRole
+  latitude     Float?
+  longitude    Float?
+  createdAt    DateTime @default(now()) @db.Timestamptz(3)
+
+  // Worker profile (if this user is a worker)
+  worker       Worker?
+
+  // Bookings made by this user as customer
+  bookings     Booking[] @relation("CustomerBookings")
+}
+
+
+// ==========================
+// 2. COOPERATIVES
+// ==========================
+
+model Cooperative {
+  id                 String   @id @default(uuid()) @db.Uuid
+  name               String   @db.VarChar(200)
+  registrationNumber String   @unique @db.VarChar(100)
+  adminEmail         String   @unique @db.VarChar(255)
+  adminPasswordHash  String   @db.VarChar(255)
+  adminPhone         String?  @db.VarChar(20)
+  createdAt          DateTime @default(now()) @db.Timestamptz(3)
+
+  // Workers belonging to this cooperative
+  workers            Worker[]
+}
+
+
+// ==========================
+// 3. WORKERS
+// ==========================
+
+model Worker {
+  id                 String             @id @default(uuid()) @db.Uuid
+
+  userId             String             @unique @db.Uuid
+  cooperativeId      String             @db.Uuid
+
+  bio                String?            @db.Text
+  averageRating      Decimal            @default(0) @db.Decimal(3, 2)
+  totalJobs          Int                @default(0)
+  verificationStatus VerificationStatus @default(PENDING)
+  availabilityStatus AvailabilityStatus @default(OFFLINE)
+
+  latitude           Float?
+  longitude          Float?
+
+  createdAt          DateTime           @default(now()) @db.Timestamptz(3)
+
+  // Relations
+  user               User               @relation(fields: [userId], references: [id])
+  cooperative        Cooperative        @relation(fields: [cooperativeId], references: [id])
+
+  skills             WorkerSkill[]
+  bookings           Booking[]
+}
+
+
+// ==========================
+// 4. SKILLS
+// ==========================
+
+model Skill {
+  id        String   @id @default(uuid()) @db.Uuid
+  name      String   @unique @db.VarChar(100)
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+
+  // Relations
+  workers   WorkerSkill[]
+  services  Service[]
+}
+
+
+// ==========================
+// 5. WORKER_SKILLS
+// ==========================
+
+model WorkerSkill {
+  id       String @id @default(uuid()) @db.Uuid
+  workerId String @db.Uuid
+  skillId  String @db.Uuid
+
+  // Relations
+  worker   Worker @relation(fields: [workerId], references: [id], onDelete: Cascade)
+  skill    Skill  @relation(fields: [skillId], references: [id], onDelete: Cascade)
+
+  // Prevent duplicate skill assignment
+  @@unique([workerId, skillId])
+}
+
+
+// ==========================
+// 6. SERVICES
+// ==========================
+
+model Service {
+  id          String   @id @default(uuid()) @db.Uuid
+  skillId     String   @db.Uuid
+  name        String   @db.VarChar(150)
+  description String?  @db.Text
+  basePrice   Decimal  @db.Decimal(10, 2)
+  createdAt   DateTime @default(now()) @db.Timestamptz(3)
+
+  // Relations
+  skill       Skill    @relation(fields: [skillId], references: [id])
+  bookings    Booking[]
+}
+
+
+// ==========================
+// 7. BOOKINGS
+// ==========================
+
+model Booking {
+  id                    String           @id @default(uuid()) @db.Uuid
+
+  customerId            String           @db.Uuid
+  workerId              String           @db.Uuid
+  serviceId             String           @db.Uuid
+
+  bookingDate           DateTime         @db.Date
+  bookingTime           DateTime         @db.Time(0)
+
+  scheduledStartTime    DateTime?        @db.Timestamptz(3)
+  scheduledEndTime      DateTime?        @db.Timestamptz(3)
+
+  address               String           @db.Text
+  latitude              Float?
+  longitude             Float?
+
+  status                BookingStatus    @default(PENDING)
+  isEmergency           Boolean          @default(false)
+
+  // Rejected workers tracking for cascading reassignment
+  rejectedWorkerIds     String[]         @default([])
+
+  // Pricing
+  basePrice             Decimal          @db.Decimal(10, 2)
+
+  additionalWork        Boolean          @default(false)
+  additionalDescription String?          @db.Text
+  additionalPrice       Decimal          @default(0) @db.Decimal(10, 2)
+  additionalStatus      AdditionalStatus @default(NONE)
+
+  finalPrice            Decimal          @db.Decimal(10, 2)
+
+  createdAt             DateTime         @default(now()) @db.Timestamptz(3)
+
+  // Relations
+  customer              User             @relation("CustomerBookings", fields: [customerId], references: [id])
+  worker                Worker           @relation(fields: [workerId], references: [id])
+  service               Service          @relation(fields: [serviceId], references: [id])
+
+  payment               Payment?
+  review                Review?
+}
+
+
+// ==========================
+// 8. PAYMENTS
+// ==========================
+
+model Payment {
+  id                  String        @id @default(uuid()) @db.Uuid
+
+  bookingId           String        @unique @db.Uuid
+
+  amount              Decimal       @db.Decimal(10, 2)
+
+  paymentStatus       PaymentStatus @default(PENDING)
+
+  razorpayPaymentId   String?       @unique @db.VarChar(255)
+
+  createdAt           DateTime      @default(now()) @db.Timestamptz(3)
+
+  // Relation
+  booking             Booking       @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+}
+
+
+// ==========================
+// 9. REVIEWS
+// ==========================
+
+model Review {
+  id        String   @id @default(uuid()) @db.Uuid
+
+  bookingId String   @unique @db.Uuid
+
+  rating    Int
+  comment   String?  @db.Text
+
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+
+  // Relation
+  booking   Booking  @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+}
