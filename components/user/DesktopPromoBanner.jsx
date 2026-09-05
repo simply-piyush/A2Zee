@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import { Button } from '@/components/ui/button';
 
 export function DesktopPromoBanner({ onBookArtisan }) {
   return (
@@ -12,13 +13,13 @@ export function DesktopPromoBanner({ onBookArtisan }) {
         Book a verified artisan in minutes or define a custom household repair with guaranteed ₹150 base diagnosis.
       </p>
       <div className="pt-2">
-        <button
+        <Button
           type="button"
           onClick={onBookArtisan}
-          className="bg-[#1F4072] hover:bg-[#163056] text-white font-display text-sm md:text-base px-8 py-3.5 rounded-full shadow-lg hover:shadow-xl active:scale-95 transition-all uppercase tracking-wider cursor-pointer"
+          className="bg-[#1F4072] hover:bg-[#163056] text-white font-display text-sm md:text-base px-8 py-3.5 h-auto rounded-full shadow-lg hover:shadow-xl active:scale-95 transition-all uppercase tracking-wider cursor-pointer"
         >
           BOOK AN ARTISIAN
-        </button>
+        </Button>
       </div>
     </section>
   );

@@ -46,15 +46,7 @@ export default function UserAppPage() {
 
   // Search State - real user search history, no dummy presets
   const [searchQuery, setSearchQuery] = useState('');
-  const [recentSearches, setRecentSearches] = useState(() => {
-    if (typeof window !== 'undefined') {
-      try {
-        const saved = localStorage.getItem('a2zee_search_history');
-        if (saved) return JSON.parse(saved);
-      } catch (e) {}
-    }
-    return [];
-  });
+  const [recentSearches, setRecentSearches] = useState([]);
 
   // Create Job State
   const [jobType, setJobType] = useState('Instant'); // 'Instant' (Emergency) or 'Timely'
@@ -72,10 +64,122 @@ export default function UserAppPage() {
   const [justBookedNotice, setJustBookedNotice] = useState(null);
 
   // Location & User info
-  const [userLocation, setUserLocation] = useState('Madhyamgram, Kolkata');
+  const [userLocation, setUserLocation] = useState('Flat 402, Green Meadows, Madhyamgram, Kolkata');
   const [userCoords, setUserCoords] = useState({ lat: 22.6950, lng: 88.4550 });
-  const [userName, setUserName] = useState('Priyush');
+  const [userName, setUserName] = useState('Priyush Customer');
   const [userPhone, setUserPhone] = useState('+91 98301 23456');
+  const [userEmail, setUserEmail] = useState('priyush@a2zee.local');
+  const [userGender, setUserGender] = useState('Male');
+
+  // Saved Addresses State (max 5)
+  const [addresses, setAddresses] = useState([
+    {
+      id: 'addr_1',
+      label: 'Home',
+      addressLine: 'Flat 402, Green Meadows, Madhyamgram, Kolkata',
+      city: 'Madhyamgram',
+      state: 'West Bengal',
+      latitude: 22.6950,
+      longitude: 88.4550,
+      isDefault: true,
+    },
+    {
+      id: 'addr_2',
+      label: 'Work',
+      addressLine: 'Module 102, Webel IT Park, Salt Lake Sector V, Kolkata',
+      city: 'Salt Lake',
+      state: 'West Bengal',
+      latitude: 22.5800,
+      longitude: 88.4350,
+      isDefault: false,
+    },
+  ]);
+
+  // Fetch live addresses on mount
+  useEffect(() => {
+    async function loadAddresses() {
+      try {
+        const res = await fetch('/api/addresses');
+        const data = await res.json();
+        if (data.success && Array.isArray(data.data) && data.data.length > 0) {
+          setAddresses(data.data);
+          const defaultAddr = data.data.find(a => a.isDefault) || data.data[0];
+          if (defaultAddr) {
+            setUserLocation(defaultAddr.addressLine);
+            if (defaultAddr.latitude && defaultAddr.longitude) {
+              setUserCoords({ lat: Number(defaultAddr.latitude), lng: Number(defaultAddr.longitude) });
+            }
+          }
+        }
+      } catch (err) {
+        console.warn('Addresses load warning:', err);
+      }
+    }
+    loadAddresses();
+  }, []);
+
+  const handleAddAddress = async (newAddr) => {
+    try {
+      const res = await fetch('/api/addresses', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newAddr),
+      });
+      const data = await res.json();
+      if (data.success && data.data) {
+        const created = data.data;
+        setAddresses(prev => {
+          let updated = [created, ...prev.filter(a => a.id !== created.id)];
+          if (created.isDefault) {
+            updated = updated.map(a => a.id === created.id ? a : { ...a, isDefault: false });
+          }
+          return updated.slice(0, 5);
+        });
+      }
+    } catch (e) {
+      console.warn('Error adding address:', e);
+      const fallback = { id: `addr_${Date.now()}`, ...newAddr };
+      setAddresses(prev => [fallback, ...prev].slice(0, 5));
+    }
+  };
+
+  const handleDeleteAddress = async (id) => {
+    try {
+      await fetch(`/api/addresses/${id}`, { method: 'DELETE' });
+    } catch (e) {}
+    setAddresses(prev => prev.filter(a => a.id !== id));
+  };
+
+  const handleSetDefaultAddress = async (id) => {
+    try {
+      await fetch(`/api/addresses/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ isDefault: true }),
+      });
+    } catch (e) {}
+    setAddresses(prev => {
+      const updated = prev.map(a => ({
+        ...a,
+        isDefault: a.id === id,
+      }));
+      const matched = updated.find(a => a.id === id);
+      if (matched) {
+        setUserLocation(matched.addressLine);
+        if (matched.latitude && matched.longitude) {
+          setUserCoords({ lat: Number(matched.latitude), lng: Number(matched.longitude) });
+        }
+      }
+      return updated;
+    });
+  };
+
+  const handleUpdateProfile = (newData) => {
+    if (newData.name) setUserName(newData.name);
+    if (newData.phone) setUserPhone(newData.phone);
+    if (newData.email) setUserEmail(newData.email);
+    if (newData.gender) setUserGender(newData.gender);
+  };
 
   // Live Nearby Artisans for Emergency/Instant Map
   const [nearbyArtisans, setNearbyArtisans] = useState([]);
@@ -84,16 +188,30 @@ export default function UserAppPage() {
   // Submission & Bookings state - persistent cache restored immediately
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [assignedArtisan, setAssignedArtisan] = useState(null);
-  const [myBookings, setMyBookings] = useState(() => {
-    if (typeof window !== 'undefined') {
-      try {
-        const saved = localStorage.getItem('a2zee_user_bookings');
-        if (saved) return JSON.parse(saved);
-      } catch (e) {}
-    }
-    return [];
-  });
+  const [myBookings, setMyBookings] = useState([]);
   const [bookingNotice, setBookingNotice] = useState('');
+
+  // Hydrate local cache after mount to prevent SSR hydration mismatch
+  useEffect(() => {
+    try {
+      const savedBookings = localStorage.getItem('a2zee_user_bookings');
+      if (savedBookings) {
+        const parsed = JSON.parse(savedBookings);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          setMyBookings(parsed);
+        }
+      }
+      const savedSearches = localStorage.getItem('a2zee_search_history');
+      if (savedSearches) {
+        const parsed = JSON.parse(savedSearches);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          setRecentSearches(parsed);
+        }
+      }
+    } catch (e) {
+      console.warn('Could not restore local cache:', e);
+    }
+  }, []);
 
   // Location selector dropdown
   const [locationDropdownOpen, setLocationDropdownOpen] = useState(false);
@@ -493,6 +611,8 @@ export default function UserAppPage() {
             locationDropdownOpen={locationDropdownOpen}
             setLocationDropdownOpen={setLocationDropdownOpen}
             activeBookingsCount={activeBookingsList.length}
+            addresses={addresses}
+            onAddAddress={handleAddAddress}
             onOpenCart={() => setCurrentView('cart')}
             onOpenProfile={() => setCurrentView('profile')}
             onOpenSearch={() => setCurrentView('search')}
@@ -565,8 +685,14 @@ export default function UserAppPage() {
         <UserProfileView
           userName={userName}
           userPhone={userPhone}
-          userLocation={userLocation}
-          userCoords={userCoords}
+          userEmail={userEmail}
+          userGender={userGender}
+          addresses={addresses}
+          onAddAddress={handleAddAddress}
+          onDeleteAddress={handleDeleteAddress}
+          onSetDefaultAddress={handleSetDefaultAddress}
+          onUpdateProfile={handleUpdateProfile}
+          myBookings={myBookings}
           onBack={() => setCurrentView('home')}
         />
       )}

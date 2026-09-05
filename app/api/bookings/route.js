@@ -285,6 +285,7 @@ export async function POST(request) {
           skills: {
             include: { skill: true },
           },
+          addresses: true,
           bookings: {
             where: {
               status: { in: ['PENDING', 'ACCEPTED', 'IN_PROGRESS'] },

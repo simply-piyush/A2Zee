@@ -57,21 +57,25 @@ enum PaymentStatus {
 // ==========================
 
 model User {
-  id           String   @id @default(uuid()) @db.Uuid
-  fullName     String   @db.VarChar(100)
-  email        String   @unique @db.VarChar(255)
-  phone        String   @unique @db.VarChar(20)
-  passwordHash String   @db.VarChar(255)
+  id           String    @id @default(uuid()) @db.Uuid
+  fullName     String    @db.VarChar(100)
+  email        String    @unique @db.VarChar(255)
+  phone        String    @unique @db.VarChar(20)
+  passwordHash String    @db.VarChar(255)
   role         UserRole
+  gender       String?   @db.VarChar(20)
   latitude     Float?
   longitude    Float?
-  createdAt    DateTime @default(now()) @db.Timestamptz(3)
+  createdAt    DateTime  @default(now()) @db.Timestamptz(3)
 
   // Worker profile (if this user is a worker)
   worker       Worker?
 
   // Bookings made by this user as customer
   bookings     Booking[] @relation("CustomerBookings")
+
+  // Saved addresses
+  addresses    Address[]
 }
 
 
@@ -120,6 +124,7 @@ model Worker {
 
   skills             WorkerSkill[]
   bookings           Booking[]
+  addresses          Address[]
 }
 
 
@@ -261,4 +266,38 @@ model Review {
 
   // Relation
   booking   Booking  @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+}
+
+
+// ==========================
+// 10. ADDRESSES
+// ==========================
+
+model Address {
+  id          String   @id @default(uuid()) @db.Uuid
+
+  userId      String?  @db.Uuid
+  workerId    String?  @db.Uuid
+
+  label       String   @default("Home") @db.VarChar(50)
+  addressLine String   @db.Text
+  city        String   @default("Kolkata") @db.VarChar(100)
+  state       String   @default("West Bengal") @db.VarChar(100)
+  postalCode  String?  @db.VarChar(20)
+
+  latitude    Float?
+  longitude   Float?
+
+  isDefault   Boolean  @default(false)
+  isCurrent   Boolean  @default(false)
+
+  createdAt   DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt   DateTime @updatedAt @db.Timestamptz(3)
+
+  // Relations
+  user        User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  worker      Worker?  @relation(fields: [workerId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([workerId])
 }

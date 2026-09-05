@@ -2,6 +2,8 @@
 
 import React from 'react';
 import { ArrowLeft, Clock, X } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { HeaderBackground } from '@/components/ui/header-background';
 
 export function SearchJobsView({
   searchQuery,
@@ -18,20 +20,21 @@ export function SearchJobsView({
       
       {/* Curved Navy Header with Back Button and Search Bar */}
       <div 
-        className="rounded-b-[36px] px-5 pt-8 pb-6 shadow-lg text-white"
-        style={{
-          background: 'radial-gradient(circle at top, #275294 0%, #1F4072 100%), repeating-linear-gradient(45deg, rgba(255,255,255,0.04) 0px, rgba(255,255,255,0.04) 2px, transparent 2px, transparent 8px)'
-        }}
+        className="rounded-b-[36px] md:rounded-b-[48px] px-5 pt-12 sm:pt-14 pb-6 shadow-lg text-white relative overflow-hidden"
       >
-        <div className="flex items-center gap-3">
-          <button 
+        <HeaderBackground />
+
+        <div className="flex items-center gap-3 relative z-10">
+          <Button 
             type="button"
+            variant="ghost"
+            size="icon"
             onClick={onBack}
             className="w-10 h-10 rounded-full flex items-center justify-center hover:bg-white/10 active:scale-95 transition-all text-white cursor-pointer"
             aria-label="Go back"
           >
             <ArrowLeft className="w-6 h-6" />
-          </button>
+          </Button>
 
           <form onSubmit={onSearchSubmit} className="flex-1">
             <div className="relative">

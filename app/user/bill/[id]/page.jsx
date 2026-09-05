@@ -1,30 +1,91 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useParams } from 'next/navigation';
 import { ArrowLeft, CheckCircle2, ShieldCheck, Heart, ArrowRight, Receipt, CreditCard } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { INITIAL_BOOKING } from '@/lib/data';
+import { TopHeaderBanner } from '@/components/ui/top-header-banner';
+import { INITIAL_BOOKING, COOP_WORKERS } from '@/lib/data';
 
-export default function UserBillPage({ params }) {
-  const booking = INITIAL_BOOKING;
+export default function UserBillPage() {
+  const params = useParams();
+  const rawId = params?.id;
+  const decodedId = rawId ? decodeURIComponent(rawId) : '';
 
-  // Billing values matching Figma Frame 89:105
-  const serviceFee = 250.00;
-  const extraTimeFee = 15.00;
-  const gst = 10.00;
+  const [booking, setBooking] = useState(INITIAL_BOOKING);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    async function loadBooking() {
+      setIsLoading(true);
+      let found = null;
+
+      if (decodedId) {
+        try {
+          const res = await fetch(`/api/bookings/${decodedId}`);
+          if (res.ok) {
+            const data = await res.json();
+            if (data.success && data.data) found = data.data;
+          }
+        } catch (e) {}
+      }
+
+      if (!found && typeof window !== 'undefined') {
+        try {
+          const saved = localStorage.getItem('a2zee_user_bookings');
+          if (saved) {
+            const list = JSON.parse(saved);
+            if (Array.isArray(list)) {
+              found = list.find(b => b.id === decodedId || b.bookingCode === decodedId);
+            }
+          }
+        } catch (e) {}
+      }
+
+      if (found) {
+        const workerObj = found.worker || COOP_WORKERS[1];
+        setBooking({
+          ...found,
+          worker: {
+            ...workerObj,
+            name: workerObj.name || 'Ramesh Kumar',
+            society: typeof workerObj.cooperative === 'string'
+              ? workerObj.cooperative
+              : workerObj.cooperative?.name || workerObj.society || 'TECB Cooperative Organisation (Ward 14)',
+          }
+        });
+      }
+      setIsLoading(false);
+    }
+    loadBooking();
+  }, [decodedId]);
+
+  const isEmergency = Boolean(
+    booking?.isEmergency || 
+    booking?.jobType === 'Instant' || 
+    booking?.type === 'Emergency'
+  );
+
+  const serviceFee = Number(booking.basePrice || 250.00);
+  const emergencyFee = isEmergency ? 100.00 : 0.00;
+  const extraTimeFee = Number(booking.additionalPrice || booking.extraAmount || 0);
 
   const [selectedTip, setSelectedTip] = useState(0);
-  const [isPaid, setIsPaid] = useState(false);
+  const [isPaid, setIsPaid] = useState(
+    booking.paymentStatus === 'PAID' || 
+    booking.paymentStatus === 'SUCCESS' || 
+    booking.payment?.paymentStatus === 'SUCCESS'
+  );
   const [isPaying, setIsPaying] = useState(false);
-  const [mockTxnId, setMockTxnId] = useState('');
+  const [mockTxnId, setMockTxnId] = useState(booking.payment?.razorpayPaymentId || '');
 
-  const tipOptions = [0, 5, 10, 20, 50];
-  const finalTotal = serviceFee + extraTimeFee + gst + selectedTip;
+  const tipOptions = [0, 10, 20, 50];
+  const finalTotal = serviceFee + emergencyFee + extraTimeFee + selectedTip;
 
   // 85-10-5 Cooperative Split calculation
-  const totalLabor = serviceFee + extraTimeFee;
+  const totalLabor = serviceFee + emergencyFee + extraTimeFee;
   const workerPayout = Math.round((totalLabor * 0.85 + selectedTip) * 100) / 100;
   const societyFund = Math.round(totalLabor * 0.10 * 100) / 100;
   const welfareDeposit = Math.round(totalLabor * 0.05 * 100) / 100;
@@ -38,42 +99,50 @@ export default function UserBillPage({ params }) {
         body: JSON.stringify({ tipGratitude: selectedTip }),
       });
       const data = await res.json();
-      if (data.success) {
-        setIsPaid(true);
-        setMockTxnId(data.data.transactionId);
+      const generatedTxn = data?.data?.razorpayPaymentId || data?.data?.transactionId || `TXN_${Date.now()}`;
+      setIsPaid(true);
+      setMockTxnId(generatedTxn);
+
+      if (typeof window !== 'undefined') {
+        try {
+          const saved = JSON.parse(localStorage.getItem('a2zee_user_bookings') || '[]');
+          const updatedList = saved.map(b => 
+            (b.id === booking.id || b.bookingCode === booking.id) 
+              ? { ...b, paymentStatus: 'PAID', status: 'COMPLETED', mockTxnId: generatedTxn } 
+              : b
+          );
+          localStorage.setItem('a2zee_user_bookings', JSON.stringify(updatedList));
+        } catch (e) {}
       }
     } catch (err) {
       console.error('Payment error:', err);
+      const fallbackTxn = `TXN_MOCK_${Math.floor(10000000 + Math.random() * 90000000)}`;
       setIsPaid(true);
-      setMockTxnId(`TXN_MOCK_${Math.floor(10000000 + Math.random() * 90000000)}`);
+      setMockTxnId(fallbackTxn);
     } finally {
       setIsPaying(false);
     }
   };
 
   return (
-    <div className="max-w-2xl mx-auto px-4 sm:px-6 py-8 space-y-6 pb-20">
+    <div className="min-h-screen bg-[#FFF6F0] font-secondary text-slate-900 pb-28">
       
       {/* Top Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <Link href="/user">
-            <Button variant="outline" size="icon" className="w-9 h-9 rounded-xl">
-              <ArrowLeft className="w-4 h-4" />
-            </Button>
-          </Link>
-          <div>
-            <h1 className="text-xl font-bold text-slate-900 tracking-tight">Invoice & Settlement</h1>
-            <p className="text-xs text-slate-500">Booking Code: <strong>{booking.bookingCode}</strong></p>
-          </div>
-        </div>
-        <Badge variant={isPaid ? 'success' : 'warning'}>
-          {isPaid ? 'PAID' : 'PAYMENT PENDING'}
-        </Badge>
-      </div>
+      <TopHeaderBanner
+        title="INVOICE & SETTLEMENT"
+        subtitle={`Booking Code: #${booking.bookingCode || booking.id}`}
+        backHref={`/user/track/${encodeURIComponent(booking.id)}`}
+        rightAction={
+          <Badge variant={isPaid ? 'success' : 'warning'} className="text-xs px-3 py-1 font-semibold">
+            {isPaid ? 'PAID' : 'PAYMENT PENDING'}
+          </Badge>
+        }
+      />
 
-      {/* Invoice Card */}
-      <div className="bg-white rounded-2xl border border-slate-200/80 shadow-xs p-6 space-y-6">
+      <div className="max-w-2xl mx-auto px-4 sm:px-6 pt-6 space-y-6">
+        
+        {/* Invoice Card */}
+        <div className="bg-white rounded-3xl border border-slate-200/90 shadow-xs p-6 space-y-6">
         
         {/* Service Title & Artisan Info */}
         <div className="flex justify-between items-start pb-4 border-b border-slate-100">
@@ -82,30 +151,36 @@ export default function UserBillPage({ params }) {
             <p className="text-xs text-slate-500">{booking.customerAddress}</p>
           </div>
           <div className="text-right">
-            <span className="text-xs font-semibold text-slate-900 block">{booking.worker.name}</span>
-            <span className="text-[11px] text-[#1F4072] font-medium">{booking.worker.society.split(' ')[0]} Co-op</span>
+            <span className="text-xs font-semibold text-slate-900 block">{booking.worker?.name || 'Assigned Artisan'}</span>
+            <span className="text-[11px] text-[#1F4072] font-medium">
+              {(typeof booking.worker?.society === 'string' ? booking.worker.society : 'Labour Cooperative').split(' ')[0]} Co-op
+            </span>
           </div>
         </div>
 
         {/* Itemized Line Items */}
         <div className="space-y-3 text-sm">
           <div className="flex justify-between items-center text-slate-600">
-            <span>Base Service Fee</span>
+            <span>Base Service Labor Fee</span>
             <span className="font-semibold text-slate-900">₹{serviceFee.toFixed(2)}</span>
           </div>
 
-          <div className="flex justify-between items-center text-slate-600">
-            <div className="flex items-center gap-1.5">
-              <span>Extra Time Fee</span>
-              <span className="text-[10px] bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded font-medium">Overrun</span>
+          {emergencyFee > 0 && (
+            <div className="flex justify-between items-center text-amber-700">
+              <span>Emergency Fast-Track Dispatch</span>
+              <span className="font-semibold">+₹{emergencyFee.toFixed(2)}</span>
             </div>
-            <span className="font-semibold text-slate-900">₹{extraTimeFee.toFixed(2)}</span>
-          </div>
+          )}
 
-          <div className="flex justify-between items-center text-slate-600">
-            <span>GST Concession (5%)</span>
-            <span className="font-semibold text-slate-900">₹{gst.toFixed(2)}</span>
-          </div>
+          {extraTimeFee > 0 && (
+            <div className="flex justify-between items-center text-slate-600">
+              <div className="flex items-center gap-1.5">
+                <span>Extra Time / Materials</span>
+                <span className="text-[10px] bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded font-medium">Overrun</span>
+              </div>
+              <span className="font-semibold text-slate-900">+₹{extraTimeFee.toFixed(2)}</span>
+            </div>
+          )}
 
           {selectedTip > 0 && (
             <div className="flex justify-between items-center text-emerald-600">
@@ -115,7 +190,10 @@ export default function UserBillPage({ params }) {
           )}
 
           <div className="pt-3 border-t border-slate-200 flex justify-between items-center text-base">
-            <span className="font-bold text-slate-900">Total Payable</span>
+            <div>
+              <span className="font-bold text-slate-900 block">Total Payable</span>
+              <span className="text-[11px] text-slate-400">Taxes & Cooperative Fees Included</span>
+            </div>
             <span className="font-extrabold text-2xl text-[#1F4072]">₹{finalTotal.toFixed(2)}</span>
           </div>
         </div>
@@ -188,8 +266,8 @@ export default function UserBillPage({ params }) {
           </div>
         )}
 
+        </div>
       </div>
-
     </div>
   );
 }

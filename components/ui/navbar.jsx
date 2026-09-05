@@ -29,7 +29,7 @@ export function Navbar() {
 
   const [activeTab, setActiveTab] = useState("home");
   const [userView, setUserView] = useState("home");
-  const [cartCount, setCartCount] = useState(0);
+
 
   const activeTabRef = useRef("home");
   const navRefs = useRef({});
@@ -60,20 +60,14 @@ export function Navbar() {
       }
     };
 
-    const handleCartUpdate = (e) => {
-      if (typeof e.detail === 'number') {
-        setCartCount(e.detail);
-      }
-    };
-
     window.addEventListener('a2zee-user-tab-change', handleTabChange);
     window.addEventListener('a2zee-user-view', handleViewChange);
-    window.addEventListener('a2zee-cart-count', handleCartUpdate);
+
 
     return () => {
       window.removeEventListener('a2zee-user-tab-change', handleTabChange);
       window.removeEventListener('a2zee-user-view', handleViewChange);
-      window.removeEventListener('a2zee-cart-count', handleCartUpdate);
+
     };
   }, [isUserPortal, navItems]);
 
@@ -263,13 +257,6 @@ export function Navbar() {
                   }`}
                 >
                   <span>{item.label}</span>
-                  {item.id === "cart" && cartCount > 0 && (
-                    <span className={`text-[10px] font-black px-1.5 py-0.2 rounded-full ${
-                      isActive ? "bg-white/20 text-white" : "bg-red-500 text-white"
-                    }`}>
-                      {cartCount}
-                    </span>
-                  )}
                 </button>
               </li>
             );

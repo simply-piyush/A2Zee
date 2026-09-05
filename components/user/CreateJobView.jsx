@@ -2,10 +2,11 @@
 
 import React from 'react';
 import { ArrowLeft, ChevronDown } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { TopHeaderBanner } from '@/components/ui/top-header-banner';
 import { DatePicker } from '@/components/ui/date-picker';
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
 import { EmergencyRadarMap } from './EmergencyRadarMap';
-import { AssignedArtisanCard } from './AssignedArtisanCard';
 
 export function CreateJobView({
   jobType,
@@ -49,26 +50,10 @@ export function CreateJobView({
       </div>
 
       {/* Curved Navy Header with Back Button and Display Title */}
-      <div 
-        className="rounded-b-[36px] px-6 pt-8 pb-6 shadow-lg text-white relative z-10"
-        style={{
-          background: 'radial-gradient(circle at top, #275294 0%, #1F4072 100%), repeating-linear-gradient(45deg, rgba(255,255,255,0.04) 0px, rgba(255,255,255,0.04) 2px, transparent 2px, transparent 8px)'
-        }}
-      >
-        <div className="flex items-center gap-4">
-          <button 
-            type="button"
-            onClick={onBack}
-            className="w-10 h-10 rounded-full flex items-center justify-center hover:bg-white/10 active:scale-95 transition-all text-white cursor-pointer"
-            aria-label="Go back"
-          >
-            <ArrowLeft className="w-6 h-6" />
-          </button>
-          <h1 className="font-display text-2xl tracking-wider uppercase text-white">
-            CREATE JOB
-          </h1>
-        </div>
-      </div>
+      <TopHeaderBanner
+        title="CREATE JOB"
+        onBack={onBack}
+      />
 
       <div className="px-6 pt-6 space-y-6 flex-1 flex flex-col relative z-10">
         
@@ -231,23 +216,18 @@ export function CreateJobView({
           <EmergencyRadarMap nearbyArtisans={nearbyArtisans} userCoords={userCoords} />
         )}
 
-        {/* Assigned Artisan Banner Card */}
-        {assignedArtisan && (
-          <AssignedArtisanCard assignedArtisan={assignedArtisan} onViewInCart={onViewInCart} />
-        )}
-
-        {bookingNotice && !assignedArtisan && (
+        {bookingNotice && (
           <div className="p-3 bg-amber-50 border border-amber-200 text-amber-800 text-xs rounded-xl text-center font-normal">
             {bookingNotice}
           </div>
         )}
 
         {/* Large "Search for Expert" CTA Button */}
-        <button
+        <Button
           type="button"
           disabled={isSubmitting}
           onClick={onSearchForExpert}
-          className="w-full bg-[#1F4072] hover:bg-[#17325B] active:scale-[0.99] text-white font-normal py-4 rounded-2xl shadow-lg text-base tracking-wide transition-all disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer"
+          className="w-full h-14 rounded-2xl text-base shadow-lg cursor-pointer"
         >
           {isSubmitting ? (
             <>
@@ -257,7 +237,7 @@ export function CreateJobView({
           ) : (
             <span>Search for Expert</span>
           )}
-        </button>
+        </Button>
 
       </div>
     </div>

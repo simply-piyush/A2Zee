@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { CheckCircle2, PlusCircle, X } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 export function JustBookedNotice({ notice, onBookAnother, onDismiss }) {
   if (!notice) return null;
@@ -25,22 +26,25 @@ export function JustBookedNotice({ notice, onBookAnother, onDismiss }) {
         </div>
       </div>
       <div className="flex items-center gap-2 self-end sm:self-auto">
-        <button
+        <Button
           type="button"
+          size="sm"
           onClick={onBookAnother}
-          className="bg-[#1F4072] text-white hover:bg-[#163056] active:scale-95 text-xs font-normal rounded-xl px-4 py-2 flex items-center gap-1.5 shadow transition-all cursor-pointer"
+          className="bg-[#1F4072] text-white hover:bg-[#163056] text-xs font-normal rounded-xl px-4 py-2 flex items-center gap-1.5 shadow transition-all cursor-pointer"
         >
           <PlusCircle className="w-3.5 h-3.5 text-[#A8C7FA]" />
           <span>Book Another Job</span>
-        </button>
-        <button
+        </Button>
+        <Button
           type="button"
+          variant="ghost"
+          size="icon"
           onClick={onDismiss}
-          className="text-gray-400 hover:text-gray-600 p-1.5 rounded-lg cursor-pointer"
+          className="w-8 h-8 text-gray-400 hover:text-gray-600 rounded-lg cursor-pointer"
           aria-label="Dismiss banner"
         >
           <X className="w-4 h-4" />
-        </button>
+        </Button>
       </div>
     </div>
   );

@@ -9,6 +9,9 @@ import {
   Phone, Clock, ShieldCheck, Sparkles 
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { TopHeaderBanner } from '@/components/ui/top-header-banner';
+import { EmergencyRadarMap } from '@/components/user/EmergencyRadarMap';
 import { TRADE_CATEGORIES, getPresetDescriptions } from '@/lib/servicePresets';
 import { BookingSuccessModal } from '@/components/ui/booking-success-modal';
 import { DatePicker } from '@/components/ui/date-picker';
@@ -208,30 +211,11 @@ function CreateJobForm() {
         </div>
         
         {/* Curved Navy Header with Back Button and Display Title */}
-        <div 
-          className="rounded-b-[36px] px-6 pt-8 pb-6 shadow-lg text-white relative z-10"
-          style={{
-            background: 'radial-gradient(circle at top, #275294 0%, #1F4072 100%), repeating-linear-gradient(45deg, rgba(255,255,255,0.04) 0px, rgba(255,255,255,0.04) 2px, transparent 2px, transparent 8px)'
-          }}
-        >
-          <div className="flex items-center gap-4">
-            <Link 
-              href="/user"
-              className="w-10 h-10 rounded-full flex items-center justify-center hover:bg-white/10 active:scale-95 transition-all text-white"
-              aria-label="Go back to user portal"
-            >
-              <ArrowLeft className="w-6 h-6" />
-            </Link>
-            <div>
-              <h1 className="font-display text-2xl tracking-wider uppercase text-white">
-                CREATE JOB
-              </h1>
-              <p className="text-xs text-[#A8C7FA] font-normal">
-                Multiple bookings supported • Verified cooperative karigars
-              </p>
-            </div>
-          </div>
-        </div>
+        <TopHeaderBanner
+          title="CREATE JOB"
+          subtitle="Multiple bookings supported • Verified cooperative karigars"
+          backHref="/user"
+        />
 
         <form onSubmit={handleSearchForExpert} className="px-6 pt-6 space-y-5 flex-1 flex flex-col relative z-10">
           
@@ -391,51 +375,7 @@ function CreateJobForm() {
 
           {/* Instant Emergency GPS Map Section */}
           {jobType === 'Instant' && (
-            <div className="bg-white border border-gray-200 rounded-2xl p-4 shadow-sm animate-in fade-in duration-150">
-              <div className="flex items-center justify-between mb-2">
-                <div className="flex items-center gap-2">
-                  <span className="w-2.5 h-2.5 rounded-full bg-red-500 animate-ping" />
-                  <span className="text-xs font-bold text-red-600 uppercase tracking-wide">Emergency Radar Active</span>
-                </div>
-                <span className="text-xs text-gray-500 font-medium">{nearbyArtisans.length} nearby artisans</span>
-              </div>
-
-              <div className="relative w-full h-36 bg-[#E9F0FA] rounded-xl overflow-hidden border border-[#D0E0F5] flex items-center justify-center">
-                <div className="absolute inset-0 bg-[radial-gradient(#1F4072_1px,transparent_1px)] [background-size:16px_16px] opacity-15" />
-                <div className="absolute w-28 h-28 rounded-full border border-[#1F4072]/20 animate-ping pointer-events-none" />
-                <div className="absolute w-44 h-44 rounded-full border border-[#1F4072]/15 pointer-events-none" />
-
-                <div className="relative z-10 flex flex-col items-center">
-                  <div className="w-8 h-8 rounded-full bg-[#1F4072] text-white flex items-center justify-center shadow-lg border-2 border-white">
-                    <MapPin className="w-4 h-4" />
-                  </div>
-                  <span className="text-[10px] font-bold bg-white/90 px-2 py-0.5 rounded shadow text-gray-700 mt-1">You</span>
-                </div>
-
-                {nearbyArtisans.slice(0, 4).map((artisan, idx) => {
-                  const offsets = [
-                    { top: '20%', left: '25%' },
-                    { top: '30%', right: '22%' },
-                    { bottom: '25%', left: '35%' },
-                    { bottom: '20%', right: '30%' },
-                  ];
-                  return (
-                    <div
-                      key={artisan.id || artisan.workerId || idx}
-                      style={offsets[idx % offsets.length]}
-                      className="absolute z-10 flex flex-col items-center group cursor-pointer"
-                    >
-                      <div className="w-6 h-6 rounded-full bg-[#1F4072]/20 text-[#1F4072] flex items-center justify-center font-bold text-xs shadow border border-[#1F4072]/40 backdrop-blur-sm">
-                        ★
-                      </div>
-                      <span className="text-[9px] font-semibold bg-black/75 text-white px-1 py-0.5 rounded opacity-0 group-hover:opacity-100 transition-opacity">
-                        {artisan.name?.split(' ')[0]}
-                      </span>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
+            <EmergencyRadarMap nearbyArtisans={nearbyArtisans} userCoords={userCoords} />
           )}
 
           {bookingNotice && (
@@ -447,10 +387,10 @@ function CreateJobForm() {
 
 
           {/* Large "Search for Expert" CTA Button */}
-          <button
+          <Button
             type="submit"
             disabled={isSubmitting}
-            className="w-full bg-[#1F4072] hover:bg-[#17325B] active:scale-[0.99] text-white font-normal py-4 rounded-2xl shadow-lg text-base tracking-wide transition-all disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer"
+            className="w-full h-14 rounded-2xl text-base shadow-lg cursor-pointer"
           >
             {isSubmitting ? (
               <>
@@ -460,7 +400,7 @@ function CreateJobForm() {
             ) : (
               <span>Search for Expert</span>
             )}
-          </button>
+          </Button>
 
         </form>
       </div>

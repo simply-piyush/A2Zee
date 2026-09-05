@@ -135,6 +135,38 @@ async function main() {
   });
   console.log('✔ Customer seeded: Priya Soni (Madhyamgram, Lat: 22.6950, Lng: 88.4550)');
 
+  // Seed Customer Addresses
+  try {
+    await prisma.address.deleteMany({ where: { userId: customerUser.id } });
+    await prisma.address.createMany({
+      data: [
+        {
+          userId: customerUser.id,
+          label: 'Home',
+          addressLine: 'Flat 402, Green Meadows, Madhyamgram, Kolkata',
+          city: 'Madhyamgram',
+          state: 'West Bengal',
+          postalCode: '700129',
+          latitude: 22.6950,
+          longitude: 88.4550,
+          isDefault: true,
+        },
+        {
+          userId: customerUser.id,
+          label: 'Work',
+          addressLine: 'Module 102, Webel IT Park, Salt Lake Sector V, Kolkata',
+          city: 'Salt Lake',
+          state: 'West Bengal',
+          postalCode: '700091',
+          latitude: 22.5800,
+          longitude: 88.4350,
+          isDefault: false,
+        },
+      ],
+    });
+    console.log('✔ Customer addresses seeded (2 of 5 allowed)');
+  } catch (e) {}
+
   // ==========================================================================
   // 5. 20 WORKERS (10 PER COOPERATIVE ACROSS ALL 10 SKILLS)
   // ==========================================================================
@@ -235,6 +267,24 @@ async function main() {
           },
         });
       }
+
+      // 4. Seed Worker's Current Address
+      try {
+        await prisma.address.deleteMany({ where: { workerId: worker.id } });
+        await prisma.address.create({
+          data: {
+            workerId: worker.id,
+            label: 'Current Base',
+            addressLine: `Artisan Station, ${coop.name}, Kolkata`,
+            city: 'Kolkata',
+            state: 'West Bengal',
+            latitude: w.lat,
+            longitude: w.lng,
+            isCurrent: true,
+            isDefault: true,
+          },
+        });
+      } catch (e) {}
     }
   }
 
