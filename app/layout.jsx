@@ -9,7 +9,7 @@ export const metadata = {
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="en" className="scroll-smooth">
+    <html lang="en" className="scroll-smooth scrollbar-none no-scrollbar">
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
@@ -18,7 +18,7 @@ export default function RootLayout({ children }) {
           rel="stylesheet"
         />
       </head>
-      <body className="min-h-screen flex flex-col bg-[#FFF6F0] text-[#0F172A] antialiased selection:bg-[#1F4072]/20 selection:text-[#1F4072] font-secondary font-normal">
+      <body className="min-h-screen flex flex-col bg-[#FFF6F0] text-[#0F172A] antialiased selection:bg-[#1F4072]/20 selection:text-[#1F4072] font-secondary font-normal scrollbar-none no-scrollbar">
         <Navbar />
         <main className="flex-1 w-full">
           {children}

@@ -198,15 +198,15 @@ function CreateJobForm() {
 
       <div className="flex-1 flex flex-col max-w-md md:max-w-3xl mx-auto w-full pb-12 animate-in fade-in duration-200 relative">
         
-        {/* Artisan Illustration: 40vh background on rightmost side of container */}
+        {/* Artisan Illustration: fixed to bottom of screen, 30vh */}
         <div 
-          className="pointer-events-none select-none absolute right-0 bottom-4 md:bottom-6 h-[40vh] max-h-[480px] z-0 flex items-end justify-end overflow-hidden"
+          className="pointer-events-none select-none fixed right-0 bottom-0 h-[20vh] z-0 flex items-end justify-end overflow-hidden"
           aria-hidden="true"
         >
           <img
             src="/images/artisan.png"
             alt=""
-            className="h-[40vh] w-auto max-h-[480px] object-contain object-bottom-right drop-shadow-lg opacity-25 sm:opacity-35 md:opacity-90 transition-opacity"
+            className="h-[20vh] w-auto object-contain object-bottom-right drop-shadow-lg opacity-25 sm:opacity-35 md:opacity-90 transition-opacity"
           />
         </div>
         
@@ -334,38 +334,38 @@ function CreateJobForm() {
                 <div className="md:col-span-6 space-y-1.5">
                   <span className="text-xs text-gray-600 font-normal block">Working Hours Window</span>
                   <div className="flex items-center gap-2">
-                    <div className="relative flex-1">
-                      <select
-                        value={startHour}
-                        onChange={(e) => setStartHour(e.target.value)}
-                        className="w-full appearance-none bg-white text-gray-900 border-2 border-gray-300 hover:border-[#1F4072] rounded-2xl py-3 px-3 pr-7 font-normal text-sm focus:outline-none focus:ring-2 focus:ring-[#1F4072] transition-colors cursor-pointer"
-                      >
-                        <option value="8 am">8 am</option>
-                        <option value="9 am">9 am</option>
-                        <option value="10 am">10 am</option>
-                        <option value="11 am">11 am</option>
-                        <option value="12 pm">12 pm</option>
-                      </select>
-                      <ChevronDown className="w-3.5 h-3.5 text-gray-500 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                    <div className="flex-1">
+                      <Select value={startHour} onValueChange={setStartHour}>
+                        <SelectTrigger className="py-3.5 px-3 sm:px-4 text-sm">
+                          <SelectValue placeholder="Start time" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="8 am">8 am</SelectItem>
+                          <SelectItem value="9 am">9 am</SelectItem>
+                          <SelectItem value="10 am">10 am</SelectItem>
+                          <SelectItem value="11 am">11 am</SelectItem>
+                          <SelectItem value="12 pm">12 pm</SelectItem>
+                        </SelectContent>
+                      </Select>
                     </div>
 
                     <span className="text-sm font-bold text-gray-400">to</span>
 
-                    <div className="relative flex-1">
-                      <select
-                        value={endHour}
-                        onChange={(e) => setEndHour(e.target.value)}
-                        className="w-full appearance-none bg-white text-gray-900 border-2 border-gray-300 hover:border-[#1F4072] rounded-2xl py-3 px-3 pr-7 font-normal text-sm focus:outline-none focus:ring-2 focus:ring-[#1F4072] transition-colors cursor-pointer"
-                      >
-                        <option value="2 pm">2 pm</option>
-                        <option value="3 pm">3 pm</option>
-                        <option value="4 pm">4 pm</option>
-                        <option value="5 pm">5 pm</option>
-                        <option value="6 pm">6 pm</option>
-                        <option value="7 pm">7 pm</option>
-                        <option value="8 pm">8 pm</option>
-                      </select>
-                      <ChevronDown className="w-3.5 h-3.5 text-gray-500 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                    <div className="flex-1">
+                      <Select value={endHour} onValueChange={setEndHour}>
+                        <SelectTrigger className="py-3.5 px-3 sm:px-4 text-sm">
+                          <SelectValue placeholder="End time" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="2 pm">2 pm</SelectItem>
+                          <SelectItem value="3 pm">3 pm</SelectItem>
+                          <SelectItem value="4 pm">4 pm</SelectItem>
+                          <SelectItem value="5 pm">5 pm</SelectItem>
+                          <SelectItem value="6 pm">6 pm</SelectItem>
+                          <SelectItem value="7 pm">7 pm</SelectItem>
+                          <SelectItem value="8 pm">8 pm</SelectItem>
+                        </SelectContent>
+                      </Select>
                     </div>
                   </div>
                 </div>

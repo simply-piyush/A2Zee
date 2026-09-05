@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import { PopularServiceCard } from './PopularServiceCard';
 
 export function PopularServicesList({
   popularServices = [],
@@ -8,20 +9,24 @@ export function PopularServicesList({
 }) {
   return (
     <section className="space-y-4">
-      <h3 className="font-normal text-lg text-gray-800 tracking-tight">
-        Popular Services
-      </h3>
+      <div className="flex items-center justify-between">
+        <h3 className="font-semibold text-lg text-gray-900 tracking-tight">
+          Popular Services
+        </h3>
+        <span className="text-xs font-normal text-gray-500">
+          Hand-picked for immediate booking
+        </span>
+      </div>
 
-      <div className="flex gap-4 overflow-x-auto pb-3 scrollbar-none snap-x">
+      {/* Responsive layout: smooth horizontal scroll on mobile, 3-column grid on desktop */}
+      <div className="flex sm:grid overflow-x-auto sm:overflow-visible sm:grid-cols-3 gap-4 pb-3 sm:pb-0 scrollbar-none snap-x">
         {popularServices.map((svc) => (
-          <div
-            key={svc.id}
-            onClick={() => onServiceClick(svc)}
-            className="min-w-[240px] md:min-w-[280px] bg-[#E2E2E2] hover:bg-[#D8D8D8] rounded-2xl p-6 flex items-center justify-center text-center shadow-sm hover:shadow-md hover:scale-[1.02] active:scale-[0.99] transition-all cursor-pointer snap-start"
-          >
-            <span className="font-display text-lg md:text-xl text-black tracking-wide uppercase leading-tight">
-              {svc.title}
-            </span>
+          <div key={svc.id} className="min-w-[260px] sm:min-w-0 flex-1 snap-start">
+            <PopularServiceCard
+              service={svc}
+              onClick={onServiceClick}
+              aspectRatio="aspect-[4/3]"
+            />
           </div>
         ))}
       </div>

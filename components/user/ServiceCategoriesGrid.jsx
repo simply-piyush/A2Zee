@@ -35,19 +35,22 @@ export function ServiceCategoriesGrid({
           <Button
             key={cat.id}
             type="button"
-            variant="category"
+            variant="default"
             onClick={() => onCategoryClick && onCategoryClick(cat)}
-            className="group h-16 sm:h-18 w-full flex flex-row items-center justify-start gap-2.5 sm:gap-3 p-2.5 sm:p-3 rounded-2xl bg-white hover:bg-[#FFF9F5] border border-gray-200 hover:border-[#1F4072]/40 shadow-xs hover:shadow-md active:scale-[0.98] transition-all cursor-pointer select-none text-left"
+            
           >
             {/* Category Icon Logo beside name */}
-            <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-xl bg-gradient-to-br from-[#E5EEFF] via-[#F2F6FF] to-white border border-[#1F4072]/15 flex items-center justify-center text-[#1F4072] group-hover:scale-105 group-hover:text-white group-hover:bg-[#1F4072] shadow-xs transition-all duration-200 flex-shrink-0">
-              <CategoryIcon id={cat.id || cat.trade} className="w-5 h-5 sm:w-5.5 sm:h-5.5 transition-transform" />
-            </div>
+            
 
             {/* Category Name beside logo */}
-            <span className="font-semibold text-xs sm:text-sm text-gray-800 group-hover:text-[#1F4072] transition-colors leading-tight line-clamp-2">
-              {cat.label || cat.title}
-            </span>
+            <div className="flex items-center justify-between gap-2 w-full">
+              <span className="capitalize">
+                {cat.label || cat.title}
+              </span>
+            
+              <CategoryIcon id={cat.id || cat.trade} className="w-5 h-5 sm:w-5.5 sm:h-5.5 transition-transform" />
+           
+            </div>
           </Button>
         ))}
       </div>

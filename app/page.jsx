@@ -1,19 +1,24 @@
 'use client';
 
+import { Button } from '@/components/ui/button';
 import React from 'react';
 import Link from 'next/link';
 import { ArrowRight } from 'lucide-react';
 import { ServicesCardDeck } from '@/components/ui/services-card-deck';
+import { LandingHeader } from '@/components/landing/LandingHeader';
 
 export default function LandingPage() {
   return (
-    <div className="space-y-20 sm:space-y-28 pb-6 sm:pb-12 bg-[#FFF6F0]">
+    <div className="pb-6 sm:pb-12 bg-[#FFF6F0]">
+      {/* Branded Landing Header (Sticky Top-0) */}
+      <LandingHeader />
 
-      {/* ========================================================================= */}
-      {/* 1. HERO SECTION: 50/50 SPLIT (LEFT: TEXT, RIGHT: MOTORCYCLE RIDER PIC)    */}
-      {/* ========================================================================= */}
-      <div className="w-full max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8">
-        <section id="home" className="relative w-full min-h-[100vh] lg:min-h-[100vh] flex items-center bg-[#FFF6F0] rounded-[36px] sm:rounded-[56px]  pt-28 pb-12 sm:pt-32 sm:pb-16 lg:py-24 shadow-xs">
+      <div className="space-y-16 sm:space-y-24 pt-4 sm:pt-6">
+        {/* ========================================================================= */}
+        {/* 1. HERO SECTION: 50/50 SPLIT (LEFT: TEXT, RIGHT: MOTORCYCLE RIDER PIC)    */}
+        {/* ========================================================================= */}
+        <div className="w-full max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8">
+          <section id="home" className="relative w-full min-h-[85vh] lg:min-h-[80vh] flex items-center bg-[#FFF6F0] rounded-[36px] sm:rounded-[56px] pt-4 pb-12 sm:pt-6 sm:pb-16 lg:py-12 shadow-xs scroll-mt-24">
 
           <div className="w-full grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-8 items-center px-6 sm:px-10 lg:px-16">
 
@@ -80,13 +85,13 @@ export default function LandingPage() {
       {/* ========================================================================= */}
       {/* 2. ABOUT US SECTION: EDITORIAL LAYOUT (Image 2)                            */}
       {/* ========================================================================= */}
-      <section id="about" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 scroll-mt-28">
+      <section id="about" className="max-w-7xl mx-auto pb-32 px-4 sm:px-8 lg:px-8 scroll-mt-36">
         <div className="bg-white rounded-[36px] sm:rounded-[48px] p-8 sm:p-14 lg:p-20 shadow-xs border border-black/5">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-16 items-center">
 
             {/* LEFT COLUMN: Welcoming Artisan Character (about/image 16.png) */}
             <div className="lg:col-span-6 relative flex items-center justify-center">
-              <div className="relative w-full max-w-md lg:max-w-lg flex justify-center">
+              <div className="relative w-full lg:max-w-lg flex justify-center">
                 <img
                   src="/about/image%2016.png"
                   alt="A2Zee Artisan"
@@ -98,7 +103,7 @@ export default function LandingPage() {
 
             {/* RIGHT COLUMN: Typography, Story, and Soft Purple Pill CTA */}
             <div className="lg:col-span-6 space-y-6 lg:pl-6 text-left">
-              <span className="font-display text-[#8E74E8] font-bold text-xs tracking-[0.25em] uppercase block">
+              <span className="font-display text-[#1F4072] font-bold text-xs tracking-[0.25em] uppercase block">
                 A BIT
               </span>
 
@@ -117,9 +122,11 @@ export default function LandingPage() {
 
               <div className="pt-2">
                 <Link href="/user">
-                  <button className="bg-[#8E74E8] hover:bg-[#8064DC] text-white font-display text-xs tracking-wider uppercase px-8 py-4 rounded-xl shadow-[0_12px_26px_rgba(142,116,232,0.40)] transition-all hover:scale-105 active:scale-95 cursor-pointer">
-                    EXPLORE MORE
-                  </button>
+                  <Button
+                  variant=""
+                  >
+                    Discover More
+                  </Button>
                 </Link>
               </div>
             </div>
@@ -136,7 +143,7 @@ export default function LandingPage() {
       {/* ========================================================================= */}
       {/* 4. MINIMALIST BOTTOM CALL TO ACTION (User Mockup)                         */}
       {/* ========================================================================= */}
-      <section id="contact" className="max-w-4xl mx-auto px-4 text-center space-y-6 pt-12 pb-20 sm:pb-28 scroll-mt-28">
+      <section id="contact" className="max-w-4xl mx-auto px-4 text-center space-y-6 pt-12 pb-20 sm:pb-28 scroll-mt-36">
         <h2 className="font-display text-3xl sm:text-4xl lg:text-5xl text-slate-950 tracking-wide uppercase leading-tight">
           READY FOR DEPENDABLE HOME SERVICE?
         </h2>
@@ -152,6 +159,7 @@ export default function LandingPage() {
         </div>
       </section>
 
+      </div>
     </div>
   );
 }

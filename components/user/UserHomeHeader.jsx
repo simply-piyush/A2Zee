@@ -109,7 +109,7 @@ export function UserHomeHeader({
                 </div>
 
                 {/* Saved Addresses List */}
-                <div className="space-y-1.5 max-h-56 overflow-y-auto pr-1">
+                <div className="space-y-1.5 max-h-56 overflow-y-auto pr-1 scrollbar-none no-scrollbar">
                   {addresses.map((addr) => {
                     const isSelected = userLocation === addr.addressLine || userLocation.includes(addr.city);
                     return (
@@ -201,11 +201,11 @@ export function UserHomeHeader({
 
           <Button
             type="button"
-            variant="explore"
+            variant="secondary"
             onClick={onExplore}
-            className="cursor-pointer"
+            //className="cursor-pointer bg-[#1F4072] text-white hover:bg-[#163056] shadow-xs border border-transparent"
           >
-            explore
+            <span className="font-bold  text-[#1F4072]">Discover</span>
           </Button>
         </div>
 

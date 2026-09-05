@@ -9,7 +9,7 @@ const LANDING_NAV_ITEMS = [
   { id: "about", label: "ABOUT" },
   { id: "services", label: "SERVICES" },
   { id: "contact", label: "CONTACT" },
-  { id: "portal", label: "LOGIN", href: "/auth" },
+  
 ];
 
 // After login: strictly home, search, book, cart
@@ -140,7 +140,7 @@ export function Navbar() {
             document.documentElement.scrollHeight - 80;
 
           if (isAtBottom) {
-            const lastItem = LANDING_NAV_ITEMS[LANDING_NAV_ITEMS.length - 2];
+            const lastItem = LANDING_NAV_ITEMS[LANDING_NAV_ITEMS.length - 1];
             if (activeTabRef.current !== lastItem.id) {
               setActiveTab(lastItem.id);
             }
@@ -148,9 +148,18 @@ export function Navbar() {
             return;
           }
 
+          // At or near the top of the landing page
+          if (window.scrollY < 150) {
+            if (activeTabRef.current !== "home") {
+              setActiveTab("home");
+            }
+            ticking = false;
+            return;
+          }
+
           const scrollPos = window.scrollY + window.innerHeight * 0.35;
 
-          for (let i = LANDING_NAV_ITEMS.length - 2; i >= 0; i--) {
+          for (let i = LANDING_NAV_ITEMS.length - 1; i >= 0; i--) {
             const item = LANDING_NAV_ITEMS[i];
             const el = document.getElementById(item.id);
             if (el) {
@@ -196,18 +205,28 @@ export function Navbar() {
 
     // 3. Handle Landing Page Navigation
     if (pathname !== "/") {
-      router.push(`/#${id}`);
+      router.push(id === "home" ? "/" : `/#${id}`);
       return;
     }
 
     targetScrollIdRef.current = id;
-    const element = document.getElementById(id);
-    if (element) {
-      const top = Math.max(0, element.getBoundingClientRect().top + window.scrollY - 30);
+
+    if (id === "home") {
+      // Scroll to the very top of the landing page
       window.scrollTo({
-        top,
+        top: 0,
         behavior: "smooth",
       });
+    } else {
+      const element = document.getElementById(id);
+      if (element) {
+        const offset = 130;
+        const top = Math.max(0, element.getBoundingClientRect().top + window.scrollY - offset);
+        window.scrollTo({
+          top,
+          behavior: "smooth",
+        });
+      }
     }
 
     clearTimeout(scrollEndTimerRef.current);
@@ -216,10 +235,11 @@ export function Navbar() {
     }, 1800);
   };
 
-  // Hide floating navbar on worker/admin portals, or when in create job page/view
+  // Hide floating navbar on worker/admin/auth portals, or when in create job page/view
   if (
     pathname?.startsWith('/worker') || 
     pathname?.startsWith('/admin') ||
+    pathname === '/auth' ||
     pathname === '/user/create-job' ||
     (isUserPortal && userView === 'create')
   ) {

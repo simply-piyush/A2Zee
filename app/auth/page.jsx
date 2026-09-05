@@ -10,6 +10,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input, Textarea } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
+import { HeaderBackground } from '@/components/ui/header-background';
 
 export function AuthForm() {
   const router = useRouter();
@@ -166,30 +167,28 @@ export function AuthForm() {
   };
 
   return (
-    <div className="w-full max-w-md mx-auto px-4 py-6 sm:py-10 space-y-5">
+    <div className="w-full space-y-5">
       
-      {/* Back to Home Button matching user request */}
-      <div className="flex items-center justify-between">
-        <Link
-          href="/"
-          className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white border-2 border-black text-black font-display text-xs uppercase shadow hover:bg-black hover:text-white transition-all active:scale-95 cursor-pointer"
-        >
-          <ArrowLeft className="w-3.5 h-3.5" />
-          <span>Back to Home</span>
-        </Link>
-        <span className="font-display text-xs text-[#1F4072] tracking-wider font-bold">A2ZEE</span>
-      </div>
-
+      {/* Back to Home Button */}
+      
       {/* Brand Header */}
       <div className="text-center space-y-2">
-        <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#1F4072]/10 text-[#1F4072] text-xs font-semibold">
-          <ShieldCheck className="w-3.5 h-3.5" />
-          <span>Worker-Owned Cooperative Platform</span>
+        <div className="w-full flex items-center justify-center gap-3 sm:gap-4">
+          <button
+            type="button"
+            onClick={() => {
+              window.location.href = '/';
+            }}
+            aria-label="Back to Home"
+            className="text-white hover:text-white/80 transition-all duration-200 hover:-translate-x-1 active:scale-90 cursor-pointer p-1 bg-transparent border-0 flex items-center justify-center"
+          >
+            <ArrowLeft className="w-6 h-6 sm:w-7 sm:h-7 text-white stroke-[2.5]" />
+          </button>
+          <h1 className="text-3xl items-center justify-center sm:text-4xl font-extrabold text-white tracking-tight font-display drop-shadow-xs">
+            Welcome to A2Zee
+          </h1>
         </div>
-        <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight font-display">
-          Welcome to A2Zee
-        </h1>
-        <p className="text-xs text-slate-500 font-medium">
+        <p className="text-xs sm:text-sm text-white/80 font-medium">
           Ministry of Cooperation • Fair Wages • Verified Local Karigars
         </p>
       </div>
@@ -210,7 +209,7 @@ export function AuthForm() {
       )}
 
       {/* Main Authentication Card */}
-      <div className="bg-white rounded-2xl border border-slate-200/80 shadow-md p-6 space-y-6">
+      <div className="bg-white rounded-3xl border border-white/30 shadow-2xl p-6 sm:p-7 space-y-6">
         
         {/* Sign In / Register Tabs */}
         <div className="grid grid-cols-2 p-1 bg-slate-100 rounded-xl">
@@ -512,8 +511,15 @@ export function AuthForm() {
 
 export default function AuthPage() {
   return (
-    <React.Suspense fallback={<div className="p-12 text-center text-xs text-slate-400">Loading authentication portal...</div>}>
-      <AuthForm />
-    </React.Suspense>
+    <div className="relative min-h-screen flex flex-col justify-center items-center py-10 px-4 overflow-hidden">
+      {/* Header Background as full-page background */}
+      <HeaderBackground />
+
+      <div className="relative z-10 w-full max-w-md mx-auto">
+        <React.Suspense fallback={<div className="p-12 text-center text-xs text-white/75">Loading authentication portal...</div>}>
+          <AuthForm />
+        </React.Suspense>
+      </div>
+    </div>
   );
 }

@@ -7,6 +7,7 @@ export { ActiveBookingBanner } from './ActiveBookingBanner';
 export { JustBookedNotice } from './JustBookedNotice';
 export { ServiceCategoriesGrid } from './ServiceCategoriesGrid';
 export { PopularServicesList } from './PopularServicesList';
+export { PopularServiceCard } from './PopularServiceCard';
 export { DesktopPromoBanner } from './DesktopPromoBanner';
 export { CartView } from './CartView';
 export { UserProfileView } from './UserProfileView';

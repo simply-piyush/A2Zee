@@ -22,16 +22,16 @@ export function Footer() {
     <footer className="relative bg-[#1F4072] text-[#FFF6F0] mt-auto">
       
       {/* Top Scalloped Cloud SVG Silhouette matching user reference */}
-      <div className="w-full overflow-hidden leading-none select-none pointer-events-none -mt-16 sm:-mt-24 lg:-mt-28">
+      <div className="w-full overflow-hidden leading-none select-none pointer-events-none -mt-16 sm:-mt-24 lg:-mt-28 relative z-10 -mb-1">
         <svg
-          viewBox="0 0 1440 140"
+          viewBox="0 0 1440 142"
           fill="none"
           xmlns="http://www.w3.org/2000/svg"
-          className="w-full h-16 sm:h-24 lg:h-28 block text-[#1F4072]"
+          className="w-full h-16 sm:h-24 lg:h-28 block text-[#1F4072] translate-y-[2px]"
           preserveAspectRatio="none"
         >
           <path
-            d="M0,140 L0,90 C0,90 25,35 110,18 C195,0 260,35 300,90 C340,95 380,45 490,20 C600,-5 710,10 780,75 C820,95 860,60 940,40 C1020,20 1100,55 1140,90 C1180,68 1240,32 1330,38 C1400,42 1440,90 1440,90 L1440,140 Z"
+            d="M0,142 L0,90 C0,90 25,35 110,18 C195,0 260,35 300,90 C340,95 380,45 490,20 C600,-5 710,10 780,75 C820,95 860,60 940,40 C1020,20 1100,55 1140,90 C1180,68 1240,32 1330,38 C1400,42 1440,90 1440,90 L1440,142 Z"
             fill="currentColor"
           />
         </svg>

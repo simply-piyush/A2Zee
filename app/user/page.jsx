@@ -16,27 +16,46 @@ import {
   UserProfileView,
 } from '@/components/user';
 
-// Popular service card presets matching Figma
+// Popular service card presets with images in public/images/
 const POPULAR_SERVICES = [
-  { id: 'p1', title: 'CEILING FAN NOT WORKING', trade: 'Electrician', desc: 'Ceiling fan not working or making noise' },
-  { id: 'p2', title: 'TAP LEAKAGE REPAIR', trade: 'Plumbers', desc: 'Bathroom or kitchen tap leaking continuously' },
-  { id: 'p3', title: 'KITCHEN DEEP CLEANING', trade: 'Househelp', desc: 'Comprehensive kitchen scrubbing, sink & chimney' },
-  { id: 'p4', title: 'DOOR LOCK & HINGE FIX', trade: 'Carpenters', desc: 'Main door lock jammed or loose wooden hinge' },
-  { id: 'p5', title: 'SWITCHBOARD SPARKING', trade: 'Electrician', desc: 'Emergency switchboard sparking or burnt plug' },
+  {
+    id: 'p1',
+    title: 'Fan Fixing',
+    trade: 'Electrician',
+    desc: 'Ceiling fan repair, humming noise or regulator fix',
+    image: '/images/fan%20fixing.webp',
+    price: '₹150 base',
+  },
+  {
+    id: 'p2',
+    title: 'Tap Fixing',
+    trade: 'Plumbers',
+    desc: 'Bathroom or kitchen tap leaking continuously',
+    image: '/images/tap%20fixing.webp',
+    price: '₹150 base',
+  },
+  {
+    id: 'p3',
+    title: 'Kitchen Cleaning',
+    trade: 'Househelp',
+    desc: 'Comprehensive kitchen scrubbing, sink & chimney',
+    image: '/images/kitchen%20cleaning.webp',
+    price: '₹299 base',
+  },
 ];
 
 // All skills categories with Figma matching labels
 const ALL_CATEGORIES = [
-  { id: 'househelp', label: 'househelp', trade: 'Househelp' },
-  { id: 'carpenter', label: 'carpenter', trade: 'Carpenters' },
-  { id: 'cleaning', label: 'cleaning', trade: 'Cleaners' },
-  { id: 'plumbing', label: 'plumbing', trade: 'Plumbers' },
-  { id: 'electrician', label: 'electrician', trade: 'Electrician' },
-  { id: 'painters', label: 'painters', trade: 'Painters' },
-  { id: 'caregivers', label: 'caregivers', trade: 'Caregivers' },
-  { id: 'drivers', label: 'drivers', trade: 'Drivers' },
-  { id: 'gardeners', label: 'gardeners', trade: 'Gardeners' },
-  { id: 'technicians', label: 'technicians', trade: 'Technicians' },
+  { id: 'househelp', label: 'Househelp', trade: 'Househelp' },
+  { id: 'carpenter', label: 'Carpenter', trade: 'Carpenters' },
+  { id: 'cleaning', label: 'Cleaning', trade: 'Cleaners' },
+  { id: 'plumbing', label: 'Plumbing', trade: 'Plumbers' },
+  { id: 'electrician', label: 'Electrician', trade: 'Electrician' },
+  { id: 'painters', label: 'Painter', trade: 'Painters' },
+  { id: 'caregivers', label: 'Caregiver', trade: 'Caregivers' },
+  { id: 'drivers', label: 'Driver', trade: 'Drivers' },
+  { id: 'gardeners', label: 'Gardener', trade: 'Gardeners' },
+  { id: 'technicians', label: 'Technician', trade: 'Technicians' },
 ];
 
 export default function UserAppPage() {
