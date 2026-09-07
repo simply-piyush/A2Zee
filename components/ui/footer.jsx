@@ -42,8 +42,8 @@ export function Footer() {
         {/* Top Content Row matching reference image */}
         <div className="pb-1 max-w-3xl">
           {/* Brand Logo in Luckiest Guy */}
-          <h2 className="font-display text-4xl sm:text-5xl text-white tracking-wide">
-            A2zee
+          <h2 className="font-display text-4xl sm:text-4xl font-bold  text-white tracking-wide">
+            A2ZEE
           </h2>
 
           {/* Motto */}

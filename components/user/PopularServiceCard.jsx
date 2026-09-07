@@ -78,7 +78,7 @@ export function PopularServiceCard({
       <div className="p-4 sm:p-5 flex-1 flex flex-col justify-between gap-3">
         <div className="space-y-1">
           {/* Service Name */}
-          <h4 className="font-semibold text-base sm:text-lg text-gray-900 group-hover:text-[#1F4072] transition-colors leading-snug line-clamp-1">
+          <h4 className="font-outfit font-semibold text-base sm:text-lg text-gray-900 group-hover:text-[#1F4072] transition-colors leading-snug line-clamp-1">
             {title}
           </h4>
 
@@ -92,10 +92,10 @@ export function PopularServiceCard({
 
         {/* Footer: Base Rate & Action */}
         <div className="pt-2.5 border-t border-gray-100 flex items-center justify-between">
-          <span className="text-xs font-semibold text-gray-600">
+          <span className="text-xs font-bold text-gray-700 font-outfit">
             {price}
           </span>
-          <span className="inline-flex items-center gap-1 text-xs font-bold text-[#1F4072] group-hover:translate-x-0.5 transition-transform">
+          <span className="inline-flex items-center gap-1 text-xs font-bold text-[#1F4072] font-outfit group-hover:translate-x-0.5 transition-transform">
             <span>Book Now</span>
             <ArrowRight className="w-3.5 h-3.5" />
           </span>

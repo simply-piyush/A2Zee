@@ -3,6 +3,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Calendar as CalendarIcon, ChevronLeft, ChevronRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { Button } from '@/components/ui/button';
 
 const DAYS_OF_WEEK = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'];
 const MONTH_NAMES = [
@@ -19,10 +20,12 @@ const MONTH_NAMES = [
 export function DatePicker({
   date,
   setDate,
-  placeholder = 'Pick a date',
+  placeholder = 'Select Date',
   className = '',
   minDate = new Date(),
   disabled = false,
+  variant = 'outline',
+  size = 'sm',
 }) {
   const [isOpen, setIsOpen] = useState(false);
   const containerRef = useRef(null);
@@ -100,38 +103,38 @@ export function DatePicker({
   }
 
   // Current month days
-  for (let d = 1; d <= daysInMonth; d++) {
+  for (let i = 1; i <= daysInMonth; i++) {
     calendarDays.push({
-      day: d,
+      day: i,
       month: currentMonth,
       year: currentYear,
       isCurrentMonth: true,
     });
   }
 
-  // Next month leading days (to fill 35 or 42 grid slots)
-  const remainingSlots = (7 - (calendarDays.length % 7)) % 7;
-  for (let d = 1; d <= remainingSlots; d++) {
+  // Next month leading days to fill grid (42 cells total)
+  const remainingCells = 42 - calendarDays.length;
+  for (let i = 1; i <= remainingCells; i++) {
     calendarDays.push({
-      day: d,
+      day: i,
       month: currentMonth + 1,
       year: currentMonth === 11 ? currentYear + 1 : currentYear,
       isCurrentMonth: false,
     });
   }
 
-  // Check if day is selected
+  // Helper check for selected day
   const isSelected = (dObj) => {
     if (!date) return false;
-    const d = date instanceof Date ? date : new Date(date);
+    const current = date instanceof Date ? date : new Date(date);
     return (
-      d.getDate() === dObj.day &&
-      d.getMonth() === dObj.month &&
-      d.getFullYear() === dObj.year
+      current.getDate() === dObj.day &&
+      current.getMonth() === dObj.month &&
+      current.getFullYear() === dObj.year
     );
   };
 
-  // Check if day is today
+  // Helper check for today
   const isToday = (dObj) => {
     const today = new Date();
     return (
@@ -156,50 +159,36 @@ export function DatePicker({
     setIsOpen(false);
   };
 
-  // Formatting date string for display in trigger
-  const formatDisplayDate = (d) => {
-    if (!d) return null;
-    const target = d instanceof Date ? d : new Date(d);
-    if (isNaN(target.getTime())) return null;
-    return target.toLocaleDateString('en-US', {
-      weekday: 'short',
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric',
-    });
-  };
-
   return (
-    <div className={cn('relative inline-block w-full', className)} ref={containerRef}>
-      {/* Shadcn-style Button Trigger */}
-      <button
+    <div className="relative inline-block" ref={containerRef}>
+      {/* Actual Button component to open the calendar */}
+      <Button
         type="button"
+        variant={variant}
+        size={size}
         disabled={disabled}
         onClick={() => setIsOpen(!isOpen)}
         className={cn(
-          'w-full flex items-center justify-between text-left font-normal text-sm sm:text-base py-3.5 px-4 bg-white text-gray-900 border-2 border-gray-300 hover:border-[#1F4072] rounded-2xl shadow-sm transition-colors cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#1F4072]',
-          !date && 'text-gray-400',
-          isOpen && 'border-[#1F4072] ring-2 ring-[#1F4072]/20',
-          disabled && 'opacity-50 cursor-not-allowed'
+          'flex items-center gap-2 text-xs sm:text-sm font-semibold cursor-pointer shadow-xs rounded-xl transition-all',
+          isOpen && 'ring-2 ring-[#1F4072]/20 border-[#1F4072]',
+          className
         )}
       >
-        <span className="flex items-center gap-2.5 truncate">
-          <CalendarIcon className="w-4 h-4 text-[#1F4072] shrink-0" />
-          <span className="truncate">
-            {formatDisplayDate(date) || placeholder}
-          </span>
+        <CalendarIcon className="w-3.5 h-3.5 text-[#1F4072] shrink-0" />
+        <span>
+          {date 
+            ? `${new Date(date).getDate()} ${MONTH_NAMES[new Date(date).getMonth()].slice(0, 3)} ${new Date(date).getFullYear()}` 
+            : placeholder || 'Select Date'}
         </span>
-        <span className="text-xs font-normal text-[#1F4072] bg-[#FFF6F0] px-2 py-0.5 rounded-lg border border-[#1F4072]/15 shrink-0 ml-2">
-          {date ? `${new Date(date).getDate()} ${MONTH_NAMES[new Date(date).getMonth()].slice(0, 3)}` : 'Select'}
-        </span>
-      </button>
+      </Button>
 
-      {/* Shadcn-style Popover Content Calendar */}
+      {/* Popover Content Calendar */}
       {isOpen && (
         <div 
-          className="absolute left-0 z-50 mt-2 w-72 sm:w-80 bg-white rounded-2xl border-2 border-[#1F4072] shadow-2xl p-4 animate-in fade-in zoom-in-95 duration-150"
+          className="absolute right-0 sm:left-0 z-[9999] top-full mt-2 w-72 sm:w-80 bg-white rounded-2xl border-2 border-[#1F4072] shadow-2xl p-4 animate-in fade-in zoom-in-95 duration-150"
           style={{
-            boxShadow: '0 16px 40px -10px rgba(31, 64, 114, 0.25)'
+            boxShadow: '0 20px 50px -10px rgba(31, 64, 114, 0.35)',
+            zIndex: 9999
           }}
         >
           {/* Calendar Header with Month/Year and navigation arrows */}

@@ -154,11 +154,13 @@ export default function UserAppPage() {
           }
           return updated.slice(0, 5);
         });
+        return created;
+      } else {
+        throw new Error(data.error || 'Failed to save address.');
       }
     } catch (e) {
       console.warn('Error adding address:', e);
-      const fallback = { id: `addr_${Date.now()}`, ...newAddr };
-      setAddresses(prev => [fallback, ...prev].slice(0, 5));
+      throw e;
     }
   };
 
@@ -626,6 +628,7 @@ export default function UserAppPage() {
           <UserHomeHeader
             userLocation={userLocation}
             setUserLocation={setUserLocation}
+            userCoords={userCoords}
             setUserCoords={setUserCoords}
             locationDropdownOpen={locationDropdownOpen}
             setLocationDropdownOpen={setLocationDropdownOpen}

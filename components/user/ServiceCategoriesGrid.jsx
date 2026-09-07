@@ -44,7 +44,7 @@ export function ServiceCategoriesGrid({
 
             {/* Category Name beside logo */}
             <div className="flex items-center justify-between gap-2 w-full">
-              <span className="capitalize">
+              <span className="capitalize font-outfit font-semibold">
                 {cat.label || cat.title}
               </span>
             

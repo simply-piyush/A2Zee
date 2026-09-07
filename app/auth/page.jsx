@@ -51,6 +51,17 @@ export function AuthForm() {
   ];
 
   useEffect(() => {
+    const errorParam = searchParams.get('error');
+    if (errorParam === 'requires_worker_role') {
+      setErrorMsg('Worker account required. Please log in as a Cooperative Artisan to access the Worker Portal.');
+    } else if (errorParam === 'requires_admin_role') {
+      setErrorMsg('Administrator access required. Please log in with Cooperative or Federation Admin credentials.');
+    } else if (errorParam === 'unauthorized_role') {
+      setErrorMsg('Your account does not have access permissions for that page.');
+    }
+  }, [searchParams]);
+
+  useEffect(() => {
     // Load cooperatives for worker registration dropdown
     async function loadCoops() {
       try {
@@ -107,10 +118,11 @@ export function AuthForm() {
       }
 
       // Determine redirect based on authenticated role
+      const role = data.user.role;
       const destination =
-        data.user.role === 'ADMIN'
+        ['ADMIN', 'FEDERATION_ADMIN', 'SOCIETY_ADMIN'].includes(role)
           ? '/admin'
-          : data.user.role === 'WORKER'
+          : role === 'WORKER'
           ? '/worker'
           : '/user';
 
@@ -122,6 +134,7 @@ export function AuthForm() {
       setIsLoading(false);
     }
   };
+
 
   const handleRegister = async (e) => {
     e.preventDefault();
@@ -275,36 +288,40 @@ export function AuthForm() {
             </div>
 
             {/* Quick Demo Logins Helper */}
-            <div className="p-3 rounded-xl bg-slate-50 border border-slate-200/80 space-y-1.5 text-[11px] text-slate-600">
-              <span className="font-bold text-slate-800 block">Quick Demo Credentials (Password: password123):</span>
-              <div className="flex flex-wrap gap-1.5 pt-0.5">
+            <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200/80 space-y-2 text-[11px] text-slate-600">
+              <span className="font-bold text-slate-800 block">Quick Evaluator Logins (Password: password123):</span>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5 pt-0.5">
                 <button
                   type="button"
-                  onClick={() => { setIdentifier('+919899011223'); setPassword('password123'); }}
-                  className="px-2 py-0.5 rounded bg-white border border-slate-200 hover:border-slate-300 font-medium cursor-pointer"
+                  onClick={() => { setIdentifier('+919899011223'); setPassword('password123'); setSelectedRole('CUSTOMER'); }}
+                  className="px-2 py-1.5 rounded-lg bg-white border border-slate-200 hover:border-[#1F4072] text-slate-800 font-medium cursor-pointer text-center transition-all"
                 >
-                  Customer (Priya)
+                  <span className="block font-bold text-slate-900">Customer</span>
+                  <span className="text-[10px] text-slate-500">Priya Soni</span>
                 </button>
                 <button
                   type="button"
-                  onClick={() => { setIdentifier('+919876543210'); setPassword('password123'); }}
-                  className="px-2 py-0.5 rounded bg-white border border-slate-200 hover:border-slate-300 font-medium cursor-pointer"
+                  onClick={() => { setIdentifier('+919876543210'); setPassword('password123'); setSelectedRole('WORKER'); }}
+                  className="px-2 py-1.5 rounded-lg bg-white border border-slate-200 hover:border-emerald-600 text-slate-800 font-medium cursor-pointer text-center transition-all"
                 >
-                  Artisan (Ramesh)
+                  <span className="block font-bold text-emerald-700">Artisan / Worker</span>
+                  <span className="text-[10px] text-slate-500">Ramesh Kumar</span>
                 </button>
                 <button
                   type="button"
-                  onClick={() => { setIdentifier('admin.pragati@a2zee.local'); setPassword('password123'); }}
-                  className="px-2 py-0.5 rounded bg-white border border-slate-200 hover:border-slate-300 font-medium cursor-pointer"
+                  onClick={() => { setIdentifier('admin.pragati@a2zee.local'); setPassword('password123'); setSelectedRole('ADMIN'); }}
+                  className="px-2 py-1.5 rounded-lg bg-white border border-slate-200 hover:border-indigo-600 text-slate-800 font-medium cursor-pointer text-center transition-all"
                 >
-                  Pragati Admin
+                  <span className="block font-bold text-indigo-700">Coop Admin</span>
+                  <span className="text-[10px] text-slate-500">Pragati Coop</span>
                 </button>
                 <button
                   type="button"
-                  onClick={() => { setIdentifier('admin.navchetana@a2zee.local'); setPassword('password123'); }}
-                  className="px-2 py-0.5 rounded bg-white border border-slate-200 hover:border-slate-300 font-medium cursor-pointer"
+                  onClick={() => { setIdentifier('+913322891100'); setPassword('password123'); setSelectedRole('ADMIN'); }}
+                  className="px-2 py-1.5 rounded-lg bg-white border border-slate-200 hover:border-indigo-600 text-slate-800 font-medium cursor-pointer text-center transition-all"
                 >
-                  Navchetana Admin
+                  <span className="block font-bold text-indigo-700">Apex Admin</span>
+                  <span className="text-[10px] text-slate-500">WB Federation</span>
                 </button>
               </div>
             </div>

@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server';
-
-const COOKIE_NAME = 'a2zee_auth_token';
+import { authorize, COOKIE_NAME } from '@/lib/rbac';
 
 /**
  * Pure Edge-compatible zero-eval JWT payload decoder with expiration check.
@@ -59,23 +58,23 @@ export async function middleware(request) {
     return redirectRes;
   }
 
-  // 2. Role-Based Access Control (RBAC)
-  if (isAdminPath) {
-    const isAllowed = session.role === 'FEDERATION_ADMIN' || session.role === 'SOCIETY_ADMIN';
-    if (!isAllowed) {
-      const loginUrl = new URL('/auth', request.url);
+  // 2. Centralized Role-Based Access Control (RBAC) via reusable authorize()
+  const authResult = authorize(session, pathname);
+  if (!authResult.isAuthorized) {
+    const loginUrl = new URL('/auth', request.url);
+    if (isAdminPath) {
       loginUrl.searchParams.set('error', 'requires_admin_role');
-      return NextResponse.redirect(loginUrl);
-    }
-  }
-
-  if (isWorkerPath) {
-    const isAllowed = session.role === 'WORKER' || session.role === 'FEDERATION_ADMIN';
-    if (!isAllowed) {
-      const loginUrl = new URL('/auth', request.url);
+    } else if (isWorkerPath) {
       loginUrl.searchParams.set('error', 'requires_worker_role');
-      return NextResponse.redirect(loginUrl);
+    } else {
+      loginUrl.searchParams.set('error', 'unauthorized_role');
     }
+
+    const redirectRes = NextResponse.redirect(loginUrl);
+    redirectRes.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+    redirectRes.headers.set('Pragma', 'no-cache');
+    redirectRes.headers.set('Expires', '0');
+    return redirectRes;
   }
 
   // Set anti-cache headers on all authenticated pages so Back button forces server re-check
@@ -85,6 +84,7 @@ export async function middleware(request) {
   response.headers.set('Expires', '0');
   return response;
 }
+
 
 export const config = {
   matcher: [

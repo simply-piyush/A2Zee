@@ -159,7 +159,7 @@ export function CreateJobView({
 
             <div className="grid grid-cols-1 md:grid-cols-12 gap-4 items-start">
               {/* Shadcn Date Picker with color theme */}
-              <div className="md:col-span-6 space-y-1.5">
+              <div className="flex items-center justify-between gap-2 sm:flex-col sm:items-start md:col-span-6 space-y-1.5">
                 <span className="text-xs text-gray-600 font-normal block">Select Date</span>
                 <DatePicker
                   date={selectedDate}
@@ -178,11 +178,19 @@ export function CreateJobView({
                         <SelectValue placeholder="Start time" />
                       </SelectTrigger>
                       <SelectContent>
+                        <SelectItem value="7 am">7 am</SelectItem>
                         <SelectItem value="8 am">8 am</SelectItem>
                         <SelectItem value="9 am">9 am</SelectItem>
                         <SelectItem value="10 am">10 am</SelectItem>
                         <SelectItem value="11 am">11 am</SelectItem>
                         <SelectItem value="12 pm">12 pm</SelectItem>
+                        <SelectItem value="1 pm">1 pm</SelectItem>
+                        <SelectItem value="2 pm">2 pm</SelectItem>
+                        <SelectItem value="3 pm">3 pm</SelectItem>
+                        <SelectItem value="4 pm">4 pm</SelectItem>
+                        <SelectItem value="5 pm">5 pm</SelectItem>
+                        <SelectItem value="6 pm">6 pm</SelectItem>
+                        <SelectItem value="7 pm">7 pm</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -195,6 +203,12 @@ export function CreateJobView({
                         <SelectValue placeholder="End time" />
                       </SelectTrigger>
                       <SelectContent>
+                        <SelectItem value="8 am">8 am</SelectItem>
+                        <SelectItem value="9 am">9 am</SelectItem>
+                        <SelectItem value="10 am">10 am</SelectItem>
+                        <SelectItem value="11 am">11 am</SelectItem>
+                        <SelectItem value="12 pm">12 pm</SelectItem>
+                        <SelectItem value="1 pm">1 pm</SelectItem>
                         <SelectItem value="2 pm">2 pm</SelectItem>
                         <SelectItem value="3 pm">3 pm</SelectItem>
                         <SelectItem value="4 pm">4 pm</SelectItem>
@@ -202,6 +216,7 @@ export function CreateJobView({
                         <SelectItem value="6 pm">6 pm</SelectItem>
                         <SelectItem value="7 pm">7 pm</SelectItem>
                         <SelectItem value="8 pm">8 pm</SelectItem>
+                        <SelectItem value="9 pm">9 pm</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>

@@ -17,3 +17,4 @@ export { OrdersDataTable } from './OrdersDataTable';
 export { EditProfileModal } from './EditProfileModal';
 export { SavedAddressesCard } from './SavedAddressesCard';
 export { AddressAddDialog } from './AddressAddDialog';
+export { AddressAddModal } from './AddressAddModal';

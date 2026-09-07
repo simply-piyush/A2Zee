@@ -31,7 +31,7 @@ export function LandingHeader() {
               
               <div>
                 <div className="flex items-center justify-center sm:justify-start gap-2.5">
-                  <span className="font-display text-2xl sm:text-3xl text-white tracking-wider uppercase drop-shadow-xs">
+                  <span className="font-display text-2xl sm:text-3xl text-white tracking-wider uppercase font-bold drop-shadow-xs">
                     A2Zee
                   </span>
                  

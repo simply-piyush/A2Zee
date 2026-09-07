@@ -212,7 +212,7 @@ export function ServicesCardDeck() {
 
             {/* Bottom Row: Fixed Tariff & Booking Action */}
             <div className="pt-4 border-t border-black/10 flex items-center justify-between text-xs font-bold">
-              <span className="px-3 py-1.5 rounded-xl bg-black/10 text-slate-900">
+              <span className="px-3 py-1.5 rounded-xl bg-black/10 text-slate-900 font-outfit">
                 {item.price}
               </span>
               <span className="underline underline-offset-4 decoration-2 decoration-black/30 group-hover:decoration-black flex items-center gap-1">

@@ -20,16 +20,26 @@ const USER_PORTAL_NAV_ITEMS = [
   { id: "cart", label: "CART" },
 ];
 
+// Worker Artisan Portal items: strictly HOME, JOBS, WALLET
+const WORKER_PORTAL_NAV_ITEMS = [
+  { id: "home", label: "HOME" },
+  { id: "jobs", label: "JOBS" },
+  { id: "wallet", label: "WALLET" },
+];
+
 export function Navbar() {
   const router = useRouter();
   const pathname = usePathname();
   
   const isUserPortal = pathname?.startsWith('/user');
-  const navItems = isUserPortal ? USER_PORTAL_NAV_ITEMS : LANDING_NAV_ITEMS;
+  const isWorkerPortal = pathname?.startsWith('/worker');
+
+  let navItems = LANDING_NAV_ITEMS;
+  if (isUserPortal) navItems = USER_PORTAL_NAV_ITEMS;
+  else if (isWorkerPortal) navItems = WORKER_PORTAL_NAV_ITEMS;
 
   const [activeTab, setActiveTab] = useState("home");
   const [userView, setUserView] = useState("home");
-
 
   const activeTabRef = useRef("home");
   const navRefs = useRef({});
@@ -43,13 +53,19 @@ export function Navbar() {
     activeTabRef.current = activeTab;
   }, [activeTab]);
 
+  // Set default tab on route change
+  useEffect(() => {
+    setActiveTab("home");
+  }, [pathname]);
+
+
   // Listen to tab changes and view changes dispatched by user portal
   useEffect(() => {
     if (!isUserPortal) return;
 
     const handleTabChange = (e) => {
       const targetId = e.detail;
-      if (targetId && navItems.some(n => n.id === targetId)) {
+      if (targetId && USER_PORTAL_NAV_ITEMS.some(n => n.id === targetId)) {
         setActiveTab(targetId);
       }
     };
@@ -63,13 +79,29 @@ export function Navbar() {
     window.addEventListener('a2zee-user-tab-change', handleTabChange);
     window.addEventListener('a2zee-user-view', handleViewChange);
 
-
     return () => {
       window.removeEventListener('a2zee-user-tab-change', handleTabChange);
       window.removeEventListener('a2zee-user-view', handleViewChange);
-
     };
-  }, [isUserPortal, navItems]);
+  }, [isUserPortal]);
+
+  // Listen to tab changes dispatched by worker portal
+  useEffect(() => {
+    if (!isWorkerPortal) return;
+
+    const handleWorkerTabChange = (e) => {
+      const targetId = e.detail;
+      if (targetId && WORKER_PORTAL_NAV_ITEMS.some(n => n.id === targetId)) {
+        setActiveTab(targetId);
+      }
+    };
+
+    window.addEventListener('a2zee-worker-tab-change', handleWorkerTabChange);
+
+    return () => {
+      window.removeEventListener('a2zee-worker-tab-change', handleWorkerTabChange);
+    };
+  }, [isWorkerPortal]);
 
   // Smoothly glide the pill using GSAP with fluid easing
   const movePill = useCallback((tabId, immediate = false) => {
@@ -102,24 +134,20 @@ export function Navbar() {
     }
   }, []);
 
-  // Update pill position when activeTab changes
+  // Update pill on active tab change and window resize
   useEffect(() => {
-    movePill(activeTab);
-  }, [activeTab, movePill]);
+    const timer = setTimeout(() => {
+      movePill(activeTab, false);
+    }, 50);
 
-  // Initial layout calculation and resize handler
-  useEffect(() => {
-    const handleResize = () => {
-      movePill(activeTabRef.current, true);
-    };
-
-    handleResize();
+    const handleResize = () => movePill(activeTabRef.current, true);
     window.addEventListener("resize", handleResize);
 
     return () => {
+      clearTimeout(timer);
       window.removeEventListener("resize", handleResize);
     };
-  }, [movePill]);
+  }, [activeTab, movePill, isUserPortal, isWorkerPortal]);
 
   // Handle scroll detection on landing page
   useEffect(() => {
@@ -191,19 +219,25 @@ export function Navbar() {
     setActiveTab(id);
     movePill(id);
 
-    // 1. Handle User Portal In-App Tab Switch
+    // 1. Handle Worker Portal In-App Tab Switch
+    if (isWorkerPortal) {
+      window.dispatchEvent(new CustomEvent("a2zee-worker-tab", { detail: id }));
+      return;
+    }
+
+    // 2. Handle User Portal In-App Tab Switch
     if (isUserPortal) {
       window.dispatchEvent(new CustomEvent("a2zee-user-tab", { detail: id }));
       return;
     }
 
-    // 2. Handle External Route (e.g. LOGIN -> /auth)
+    // 3. Handle External Route (e.g. LOGIN -> /auth)
     if (href) {
       router.push(href);
       return;
     }
 
-    // 3. Handle Landing Page Navigation
+    // 4. Handle Landing Page Navigation
     if (pathname !== "/") {
       router.push(id === "home" ? "/" : `/#${id}`);
       return;
@@ -235,9 +269,8 @@ export function Navbar() {
     }, 1800);
   };
 
-  // Hide floating navbar on worker/admin/auth portals, or when in create job page/view
+  // Hide floating navbar on admin/auth portals, or when in create job page/view
   if (
-    pathname?.startsWith('/worker') || 
     pathname?.startsWith('/admin') ||
     pathname === '/auth' ||
     pathname === '/user/create-job' ||
@@ -259,7 +292,7 @@ export function Navbar() {
           className="absolute top-1.5 bottom-1.5 left-0 bg-[#1F4072] text-white rounded-full pointer-events-none opacity-0 shadow-sm"
         />
 
-        <ul className="relative flex items-center list-none m-0 p-0 font-display text-xs md:text-sm tracking-wide">
+        <ul className="relative flex items-center list-none m-0 p-0 font-secondary font-semibold text-xs md:text-sm tracking-wide">
           {navItems.map((item) => {
             const isActive = activeTab === item.id;
 
@@ -270,7 +303,7 @@ export function Navbar() {
                     if (el) navRefs.current[item.id] = el;
                   }}
                   onClick={() => handleNavClick(item.id, item.href)}
-                  className={`relative z-10 px-3.5 sm:px-5 py-2 rounded-full uppercase tracking-wider transition-colors duration-300 cursor-pointer flex items-center gap-1.5 ${
+                  className={`relative z-10 px-3.5 sm:px-5 py-2 rounded-full font-secondary font-semibold uppercase tracking-wider transition-colors duration-300 cursor-pointer flex items-center gap-1.5 ${
                     isActive
                       ? "text-white"
                       : "text-black hover:text-black/60"

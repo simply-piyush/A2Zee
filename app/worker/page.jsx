@@ -1,424 +1,879 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
+import { CheckCircle2, AlertCircle, Calendar as CalendarIcon, FilterX } from 'lucide-react';
 import { 
-  ShieldCheck, Plus, CheckCircle2, Clock, MapPin, Wallet, 
-  Award, AlertCircle, ArrowRight, XCircle, UserCheck, Power 
-} from 'lucide-react';
+  WorkerHomeHeader,
+  WorkerJobMinimalCard,
+  WorkerJobDetailView,
+  WorkerCoopPromoBanner,
+  WorkerWalletView, 
+  WorkerScheduleView, 
+  WorkerProfileView, 
+  WorkerRejectModal 
+} from '@/components/worker';
+import { TopHeaderBanner } from '@/components/ui/top-header-banner';
+import { DatePicker } from '@/components/ui/date-picker';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Input, Textarea } from '@/components/ui/input';
 import { INITIAL_BOOKING, WORKERS } from '@/lib/data';
+import { calculateMonthlyEarningsBreakdown, getCurrentMonthEarnings } from '@/lib/earnings';
+
+const INITIAL_ASSIGNED_JOBS = [
+  {
+    id: 'gig_em_1',
+    bookingCode: 'BK-2026-0922',
+    serviceTitle: 'Main Breaker Sparking & Smoking',
+    description: 'Sudden electrical sparks behind switchboard; immediate disconnect and fuse replacement required.',
+    isEmergency: true,
+    customerName: 'Ananya Sen',
+    customerPhone: '+91 98301 23456',
+    customerAddress: 'Flat 4B, Greenfield Residency, Jessore Road, Madhyamgram, Kolkata 700129',
+    address: 'Flat 4B, Greenfield Residency, Jessore Road, Madhyamgram, Kolkata 700129',
+    distanceKm: 0.9,
+    etaMins: 8,
+    basePrice: 350,
+    extraAmount: 0,
+    scheduledTime: 'Immediate Emergency • 15 mins ETA',
+    scheduledDate: new Date(),
+    scheduledStartTime: new Date().toISOString(),
+    scheduledEndTime: new Date(Date.now() + 3600000).toISOString(),
+    status: 'CONFIRMED',
+    latitude: 22.6980,
+    longitude: 88.4590,
+  },
+  {
+    id: 'gig_std_2',
+    bookingCode: 'BK-2026-0935',
+    serviceTitle: 'Ceiling Fan Rewiring & Capacitor',
+    description: 'Slow rotation on high regulator speed; replace 2.5mfd capacitor and check bearing lubrication.',
+    isEmergency: false,
+    customerName: 'Siddharth Roy',
+    customerPhone: '+91 98740 54321',
+    customerAddress: 'Block C-12, Green Park Avenue, New Town Action Area 1, Kolkata 700156',
+    address: 'Block C-12, Green Park Avenue, New Town Action Area 1, Kolkata 700156',
+    distanceKm: 3.2,
+    etaMins: 20,
+    basePrice: 220,
+    extraAmount: 0,
+    scheduledTime: 'Today • 3:30 PM Slot',
+    scheduledDate: new Date(),
+    scheduledStartTime: new Date().toISOString(),
+    scheduledEndTime: new Date(Date.now() + 7200000).toISOString(),
+    status: 'CONFIRMED',
+    latitude: 22.5850,
+    longitude: 88.4620,
+  },
+  {
+    id: 'gig_std_3',
+    bookingCode: 'BK-2026-0941',
+    serviceTitle: 'Inverter Battery Terminal Cleaning & Water Top-up',
+    description: 'Lead-acid backup inverter showing high temperature warning; inspect distilled water levels.',
+    isEmergency: false,
+    customerName: 'Pooja Mukherjee',
+    customerPhone: '+91 94330 98765',
+    customerAddress: 'House 18, Rabindra Pally, Barasat Road, Madhyamgram 700130',
+    address: 'House 18, Rabindra Pally, Barasat Road, Madhyamgram 700130',
+    distanceKm: 1.8,
+    etaMins: 15,
+    basePrice: 280,
+    extraAmount: 0,
+    scheduledTime: 'Tomorrow • 11:00 AM Slot',
+    scheduledDate: new Date(Date.now() + 86400000),
+    scheduledStartTime: new Date(Date.now() + 86400000).toISOString(),
+    scheduledEndTime: new Date(Date.now() + 90000000).toISOString(),
+    status: 'PENDING',
+    latitude: 22.7010,
+    longitude: 88.4520,
+  },
+  // Completed jobs for September 2026 (Current Month)
+  {
+    id: 'gig_comp_1',
+    bookingCode: 'BK-2026-0891',
+    serviceTitle: 'Main Switchboard MCB Trip Fix',
+    description: '32A double pole MCB replaced due to heating; internal load balance verified.',
+    isEmergency: false,
+    customerName: 'Kunal Ghosh',
+    customerPhone: '+91 98311 98765',
+    customerAddress: 'Flat 3A, Sukanta Pally, Madhyamgram, Kolkata 700129',
+    address: 'Flat 3A, Sukanta Pally, Madhyamgram, Kolkata 700129',
+    distanceKm: 1.2,
+    etaMins: 0,
+    basePrice: 350,
+    extraAmount: 150,
+    finalPrice: 500,
+    workerPayout: 425.00,
+    scheduledTime: 'Completed • 04 Sep 2026, 3:30 PM',
+    scheduledDate: new Date('2026-09-04T13:30:00.000Z'),
+    scheduledStartTime: '2026-09-04T13:30:00.000Z',
+    scheduledEndTime: '2026-09-04T15:30:00.000Z',
+    status: 'COMPLETED',
+    latitude: 22.6950,
+    longitude: 88.4550,
+  },
+  {
+    id: 'gig_comp_2',
+    bookingCode: 'BK-2026-0842',
+    serviceTitle: 'Emergency Short Circuit Diagnosis',
+    description: 'Neutral wire melted inside meter box junction; repaired with heavy gauge copper conduit.',
+    isEmergency: true,
+    customerName: 'Meenakshi Banerjee',
+    customerPhone: '+91 98745 12340',
+    customerAddress: 'Plot 42, Ward 12, Barasat Road, Kolkata 700126',
+    address: 'Plot 42, Ward 12, Barasat Road, Kolkata 700126',
+    distanceKm: 2.1,
+    etaMins: 0,
+    basePrice: 450,
+    extraAmount: 0,
+    finalPrice: 450,
+    workerPayout: 382.50,
+    scheduledTime: 'Completed • 05 Sep 2026, 11:00 AM',
+    scheduledDate: new Date('2026-09-05T09:30:00.000Z'),
+    scheduledStartTime: '2026-09-05T09:30:00.000Z',
+    scheduledEndTime: '2026-09-05T11:00:00.000Z',
+    status: 'COMPLETED',
+    latitude: 22.7050,
+    longitude: 88.4600,
+  },
+  {
+    id: 'gig_comp_3',
+    bookingCode: 'BK-2026-0795',
+    serviceTitle: 'Ceiling Fan Fixing & Regulator',
+    description: 'Replaced rotary electronic step regulator and balanced blades to eliminate wobbling sound.',
+    isEmergency: false,
+    customerName: 'Debabrata Das',
+    customerPhone: '+91 94320 65432',
+    customerAddress: 'Block 2, Lake Town, South Dum Dum, Kolkata 700089',
+    address: 'Block 2, Lake Town, South Dum Dum, Kolkata 700089',
+    distanceKm: 4.5,
+    etaMins: 0,
+    basePrice: 250,
+    extraAmount: 100,
+    finalPrice: 350,
+    workerPayout: 297.50,
+    scheduledTime: 'Completed • 06 Sep 2026, 2:15 PM',
+    scheduledDate: new Date('2026-09-06T12:30:00.000Z'),
+    scheduledStartTime: '2026-09-06T12:30:00.000Z',
+    scheduledEndTime: '2026-09-06T14:15:00.000Z',
+    status: 'COMPLETED',
+    latitude: 22.6020,
+    longitude: 88.4010,
+  },
+  {
+    id: 'gig_comp_4',
+    bookingCode: 'BK-2026-0710',
+    serviceTitle: 'Heavy Appliance 16A Power Point Installation',
+    description: 'New 16A modular socket with individual 20A MCB for 1.5 ton inverter air conditioner.',
+    isEmergency: false,
+    customerName: 'Ritwik Bose',
+    customerPhone: '+91 98305 77665',
+    customerAddress: 'Tower 3, Rajarhat Expressway, Action Area 2, Kolkata 700135',
+    address: 'Tower 3, Rajarhat Expressway, Action Area 2, Kolkata 700135',
+    distanceKm: 3.8,
+    etaMins: 0,
+    basePrice: 400,
+    extraAmount: 50,
+    finalPrice: 450,
+    workerPayout: 382.50,
+    scheduledTime: 'Completed • 07 Sep 2026, 5:00 PM',
+    scheduledDate: new Date('2026-09-07T15:30:00.000Z'),
+    scheduledStartTime: '2026-09-07T15:30:00.000Z',
+    scheduledEndTime: '2026-09-07T17:00:00.000Z',
+    status: 'COMPLETED',
+    latitude: 22.6150,
+    longitude: 88.4680,
+  },
+  // Completed jobs for August 2026 (Previous Month)
+  {
+    id: 'gig_comp_aug_1',
+    bookingCode: 'BK-2026-0612',
+    serviceTitle: 'Submersible Pump Starter Box Wiring',
+    description: 'Contactor coil burned due to low voltage; replaced with L&T 16A starter coil.',
+    isEmergency: false,
+    customerName: 'Samir Mukherjee',
+    customerPhone: '+91 98319 88776',
+    customerAddress: 'Old Calcutta Road, Barrackpore, Kolkata 700120',
+    address: 'Old Calcutta Road, Barrackpore, Kolkata 700120',
+    distanceKm: 5.2,
+    etaMins: 0,
+    basePrice: 550,
+    extraAmount: 150,
+    finalPrice: 700,
+    workerPayout: 595.00,
+    scheduledTime: 'Completed • 25 Aug 2026, 4:00 PM',
+    scheduledDate: new Date('2026-08-25T14:00:00.000Z'),
+    scheduledStartTime: '2026-08-25T14:00:00.000Z',
+    scheduledEndTime: '2026-08-25T16:00:00.000Z',
+    status: 'COMPLETED',
+    latitude: 22.7600,
+    longitude: 88.3700,
+  },
+  {
+    id: 'gig_comp_aug_2',
+    bookingCode: 'BK-2026-0590',
+    serviceTitle: 'Whole Flat LED Downlight Replacement',
+    description: 'Replaced 8 recessed 12W warm white LED ceiling panels in living hall.',
+    isEmergency: false,
+    customerName: 'Mousumi Paul',
+    customerPhone: '+91 98741 22334',
+    customerAddress: 'Rajarhat Main Road, Chinar Park, Kolkata 700136',
+    address: 'Rajarhat Main Road, Chinar Park, Kolkata 700136',
+    distanceKm: 2.8,
+    etaMins: 0,
+    basePrice: 480,
+    extraAmount: 0,
+    finalPrice: 480,
+    workerPayout: 408.00,
+    scheduledTime: 'Completed • 18 Aug 2026, 1:30 PM',
+    scheduledDate: new Date('2026-08-18T12:00:00.000Z'),
+    scheduledStartTime: '2026-08-18T12:00:00.000Z',
+    scheduledEndTime: '2026-08-18T13:30:00.000Z',
+    status: 'COMPLETED',
+    latitude: 22.6280,
+    longitude: 88.4410,
+  },
+];
 
 export default function WorkerPage() {
-  const worker = WORKERS[0]; // Ramesh Kumar
-  const [activeBooking, setActiveBooking] = useState({
-    ...INITIAL_BOOKING,
-    status: 'PENDING',
-  });
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [isRejectModalOpen, setIsRejectModalOpen] = useState(false);
-  const [rejectReason, setRejectReason] = useState('Schedule overlap / emergency delay');
+  const defaultWorker = WORKERS[0]; // Ramesh Kumar fallback
+  const [workerData, setWorkerData] = useState(defaultWorker);
 
-  const [availability, setAvailability] = useState('AVAILABLE'); // 'AVAILABLE' or 'OFFLINE'
-  const [extraAmount, setExtraAmount] = useState('15.00');
-  const [extraReason, setExtraReason] = useState('EXTRA_TIME_TAKEN');
-  const [extraMinutes, setExtraMinutes] = useState('30');
-  const [extraNotes, setExtraNotes] = useState('Conduit pipe rusted shut; required manual chiseling (+30 mins)');
+  // Navigation views: 'home' | 'jobs' | 'job-detail' | 'wallet' | 'schedule' | 'profile'
+  const [currentView, setCurrentView] = useState('home');
+
+  // Assigned Jobs State
+  const [assignedJobs, setAssignedJobs] = useState(INITIAL_ASSIGNED_JOBS);
+  const [selectedJob, setSelectedJob] = useState(INITIAL_ASSIGNED_JOBS[0]);
+  const [filterDate, setFilterDate] = useState(null);
+
+  // Availability & GPS State
+  const [availability, setAvailability] = useState('AVAILABLE'); // 'AVAILABLE' | 'OFFLINE'
+  const [isLocating, setIsLocating] = useState(false);
+  const [workerCoords, setWorkerCoords] = useState({ lat: 22.6950, lng: 88.4550 });
+  const [workerLocation, setWorkerLocation] = useState('Madhyamgram, Kolkata');
+  const [clusterRadius, setClusterRadius] = useState('15 km');
+
+  // Dynamic monthly earnings calculation based on completed jobs and scheduledEndTime
+  const monthlyBreakdown = useMemo(() => {
+    return calculateMonthlyEarningsBreakdown(assignedJobs);
+  }, [assignedJobs]);
+
+  const currentMonthEarningsNum = useMemo(() => {
+    return getCurrentMonthEarnings(assignedJobs, new Date());
+  }, [assignedJobs]);
+
+  const monthlyEarnings = useMemo(() => {
+    return currentMonthEarningsNum.toLocaleString('en-IN', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    });
+  }, [currentMonthEarningsNum]);
+
+  const currentMonthWelfare = useMemo(() => {
+    const currentMonthKey = `${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}`;
+    const welfare = monthlyBreakdown[currentMonthKey]?.totalWelfare || (currentMonthEarningsNum * (0.05 / 0.85));
+    return welfare.toLocaleString('en-IN', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    });
+  }, [monthlyBreakdown, currentMonthEarningsNum]);
+
+  // Reverse Geocoding Helper
+  const reverseGeocode = async (lat, lng) => {
+    try {
+      const res = await fetch(
+        `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lng}&localityLanguage=en`
+      );
+      if (res.ok) {
+        const data = await res.json();
+        const locality = data.locality || data.city || data.principalSubdivision || '';
+        const city = data.city && data.city !== locality ? data.city : (data.principalSubdivision || '');
+        if (locality && city) {
+          const formatted = `${locality}, ${city}`;
+          setWorkerLocation(formatted);
+          return formatted;
+        } else if (locality || city) {
+          const formatted = locality || city;
+          setWorkerLocation(formatted);
+          return formatted;
+        }
+      }
+    } catch (e) {
+      console.warn('Reverse geocode error:', e);
+    }
+    return 'Madhyamgram, Kolkata';
+  };
+
+  // Fetch initial location from browser GPS on mount
+  useEffect(() => {
+    if (typeof window !== 'undefined' && 'geolocation' in navigator) {
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          const { latitude, longitude } = pos.coords;
+          setWorkerCoords({ lat: latitude, lng: longitude });
+          reverseGeocode(latitude, longitude);
+        },
+        () => {
+          reverseGeocode(22.6950, 88.4550);
+        },
+        { timeout: 6000 }
+      );
+    }
+  }, []);
+
+  // Modals & Async States
+  const [isRejectModalOpen, setIsRejectModalOpen] = useState(false);
+  const [jobToReject, setJobToReject] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Flash Notifications
   const [notice, setNotice] = useState('');
   const [noticeType, setNoticeType] = useState('success');
 
-  const handleToggleAvailability = async () => {
-    const nextStatus = availability === 'AVAILABLE' ? 'OFFLINE' : 'AVAILABLE';
-    setAvailability(nextStatus);
+  // 1. Fetch live authenticated worker details
+  useEffect(() => {
+    async function loadWorkerProfile() {
+      try {
+        const res = await fetch('/api/auth/me');
+        const data = await res.json();
 
-    try {
-      await fetch('/api/workers/location', {
+        if (data.success && data.user) {
+          const user = data.user;
+          setWorkerData(prev => ({
+            ...prev,
+            id: user.worker?.id || prev.id,
+            name: user.name || prev.name,
+            initials: user.name ? user.name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase() : prev.initials,
+            trade: user.worker?.skills?.[0] || prev.trade,
+            society: user.worker?.cooperativeName || prev.society,
+            ncctTier: prev.ncctTier,
+            skills: user.worker?.skills?.length ? user.worker.skills : prev.skills,
+            averageRating: user.worker?.averageRating || prev.averageRating,
+          }));
+
+          if (user.worker?.availabilityStatus) {
+            setAvailability(user.worker.availabilityStatus);
+          }
+          if (user.worker?.latitude && user.worker?.longitude) {
+            setWorkerCoords({ lat: user.worker.latitude, lng: user.worker.longitude });
+            reverseGeocode(user.worker.latitude, user.worker.longitude);
+          }
+        }
+      } catch (e) {
+        console.warn('Could not fetch authenticated worker profile:', e);
+      }
+    }
+    loadWorkerProfile();
+  }, []);
+
+  // 1b. Fetch bookings from API and merge into assignedJobs
+  useEffect(() => {
+    async function loadBookings() {
+      try {
+        const res = await fetch('/api/bookings');
+        const data = await res.json();
+        if (data.success && Array.isArray(data.data) && data.data.length > 0) {
+          setAssignedJobs(prev => {
+            const existingIds = new Set(prev.map(j => j.id));
+            const newBookings = data.data.filter(b => !existingIds.has(b.id));
+            if (newBookings.length === 0) return prev;
+            return [...prev, ...newBookings];
+          });
+        }
+      } catch (e) {
+        console.warn('Could not load live bookings:', e);
+      }
+    }
+    loadBookings();
+  }, []);
+
+  // 2. Synchronize navigation with floating navbar custom events
+  useEffect(() => {
+    const handleNavEvent = (e) => {
+      const tab = e.detail;
+      if (tab && ['home', 'jobs', 'active', 'wallet', 'schedule', 'profile'].includes(tab)) {
+        if (tab === 'active') setCurrentView('jobs');
+        else setCurrentView(tab);
+      }
+    };
+
+    window.addEventListener('a2zee-worker-tab', handleNavEvent);
+    return () => {
+      window.removeEventListener('a2zee-worker-tab', handleNavEvent);
+    };
+  }, []);
+
+  const handleViewChange = (tabId) => {
+    setCurrentView(tabId);
+    window.dispatchEvent(new CustomEvent('a2zee-worker-tab-change', { detail: tabId }));
+  };
+
+  // 3. Online/Offline Availability Toggle with live Device GPS Geolocation
+  const handleToggleAvailability = () => {
+    const nextStatus = availability === 'AVAILABLE' ? 'OFFLINE' : 'AVAILABLE';
+
+    if (nextStatus === 'AVAILABLE') {
+      setIsLocating(true);
+      if (typeof window !== 'undefined' && 'geolocation' in navigator) {
+        navigator.geolocation.getCurrentPosition(
+          async (position) => {
+            const lat = position.coords.latitude;
+            const lng = position.coords.longitude;
+            setWorkerCoords({ lat, lng });
+            setAvailability('AVAILABLE');
+            setIsLocating(false);
+
+            const locName = (await reverseGeocode(lat, lng)) || 'Madhyamgram, Kolkata';
+
+            try {
+              await fetch('/api/workers/location', {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  workerId: workerData.id,
+                  availabilityStatus: 'AVAILABLE',
+                  latitude: lat,
+                  longitude: lng,
+                }),
+              });
+              setNoticeType('success');
+              setNotice(`Live GPS Synced: ${locName}. You are now ONLINE & ready for emergency dispatch!`);
+            } catch {
+              setNoticeType('success');
+              setNotice(`You are now ONLINE at ${locName}.`);
+            }
+          },
+          async (err) => {
+            console.warn('GPS error fallback:', err);
+            setIsLocating(false);
+            setAvailability('AVAILABLE');
+            const locName = (await reverseGeocode(workerCoords.lat, workerCoords.lng)) || 'Madhyamgram, Kolkata';
+            try {
+              await fetch('/api/workers/location', {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  workerId: workerData.id,
+                  availabilityStatus: 'AVAILABLE',
+                  latitude: workerCoords.lat,
+                  longitude: workerCoords.lng,
+                }),
+              });
+            } catch {}
+            setNoticeType('success');
+            setNotice(`Online status enabled (${locName}).`);
+          },
+          { enableHighAccuracy: true, timeout: 8000 }
+        );
+      } else {
+        setIsLocating(false);
+        setAvailability('AVAILABLE');
+        fetch('/api/workers/location', {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            workerId: workerData.id,
+            availabilityStatus: 'AVAILABLE',
+          }),
+        }).catch(() => {});
+        setNoticeType('success');
+        setNotice('You are now ONLINE & ready for emergency dispatch.');
+      }
+    } else {
+      // Switching OFFLINE
+      setIsLocating(false);
+      setAvailability('OFFLINE');
+      fetch('/api/workers/location', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          workerId: worker.id,
-          availabilityStatus: nextStatus,
+          workerId: workerData.id,
+          availabilityStatus: 'OFFLINE',
         }),
-      });
-      setNoticeType('success');
-      setNotice(`Availability toggled to ${nextStatus}. Emergency dispatch will ${nextStatus === 'AVAILABLE' ? 'now include' : 'exclude'} you.`);
-    } catch {
-      // offline fallback
+      }).catch(() => {});
+      setNoticeType('warning');
+      setNotice('You are now OFFLINE. Emergency and instant dispatches paused.');
     }
   };
 
-  const handleAcceptGig = async () => {
-    setIsSubmitting(true);
-    try {
-      const res = await fetch(`/api/bookings/${activeBooking.id}/accept`, {
-        method: 'POST',
-      });
-      const data = await res.json();
-      setActiveBooking(prev => ({ ...prev, status: 'ACCEPTED' }));
-      setNoticeType('success');
-      setNotice('Gig accepted! Booking status updated to ACCEPTED.');
-    } catch {
-      setActiveBooking(prev => ({ ...prev, status: 'ACCEPTED' }));
-      setNoticeType('success');
-      setNotice('Gig accepted.');
-    } finally {
-      setIsSubmitting(false);
-    }
+  // 4. Open Detailed View for any assigned job
+  const handleOpenJobDetails = (job) => {
+    setSelectedJob(job);
+    setCurrentView('job-detail');
   };
 
-  const handleRejectGig = async () => {
+  // 5. Open Rejection Modal for specific job
+  const handleInitiateReject = (job) => {
+    setJobToReject(job);
+    setIsRejectModalOpen(true);
+  };
+
+  // 6. Confirm Rejection & Execute Cascading Reassignment in Backend
+  const handleConfirmReject = async (reason) => {
+    if (!jobToReject) return;
     setIsSubmitting(true);
     try {
-      const res = await fetch(`/api/bookings/${activeBooking.id}/reject`, {
+      const res = await fetch(`/api/bookings/${jobToReject.id}/reject`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          workerId: worker.id,
-          reason: rejectReason,
+          workerId: workerData.id,
+          reason,
         }),
       });
       const data = await res.json();
 
       setIsRejectModalOpen(false);
       setNoticeType('warning');
+
       if (data.data?.newAssignedArtisan) {
-        setNotice(`Gig rejected. Cascading reassignment complete: assigned to next best candidate ${data.data.newAssignedArtisan.name} (${data.data.newAssignedArtisan.distanceKm} km away).`);
+        setNotice(`Job rejected. Cascading reassignment complete: allocated to candidate ${data.data.newAssignedArtisan.name} (${data.data.newAssignedArtisan.distanceKm} km away).`);
       } else {
-        setNotice('Gig rejected. Reassignment cascade initiated.');
+        setNotice('Job rejected. Automatic reassignment cascade initiated.');
       }
-      setActiveBooking(prev => ({ ...prev, status: 'CANCELLED' }));
+
+      const rejectedId = jobToReject.id;
+      setAssignedJobs(prev => prev.filter(j => j.id !== rejectedId));
+      if (selectedJob?.id === rejectedId) {
+        setSelectedJob(null);
+        setCurrentView('home');
+      }
     } catch (err) {
       console.error('Rejection error:', err);
       setIsRejectModalOpen(false);
       setNoticeType('warning');
-      setNotice('Job declined. Reassigned to next candidate.');
-      setActiveBooking(prev => ({ ...prev, status: 'CANCELLED' }));
+      setNotice('Job rejected. Cascaded to next candidate.');
+      const rejectedId = jobToReject.id;
+      setAssignedJobs(prev => prev.filter(j => j.id !== rejectedId));
+      if (selectedJob?.id === rejectedId) {
+        setSelectedJob(null);
+        setCurrentView('home');
+      }
     } finally {
       setIsSubmitting(false);
+      setJobToReject(null);
     }
   };
 
-  const handleAddExtraCharge = async (e) => {
-    e.preventDefault();
+  // 7. Add Mid-Work Extra Charges from Detail View
+  const handleAddExtraCharges = async (chargeData) => {
+    if (!selectedJob) return;
     setIsSubmitting(true);
-
     try {
-      const res = await fetch(`/api/bookings/${activeBooking.id}/extra-charges`, {
+      await fetch(`/api/bookings/${selectedJob.id}/extra-charges`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          extraAmount: parseFloat(extraAmount) || 0,
-          reason: extraReason,
-          notes: extraNotes,
-          extraTimeMinutes: parseInt(extraMinutes, 10) || 0,
-        }),
-      });
-      const data = await res.json();
+        body: JSON.stringify(chargeData),
+      }).catch(() => {});
 
-      if (data.success) {
-        setActiveBooking(prev => ({
-          ...prev,
-          extraAmount: parseFloat(extraAmount) || 0,
-          extraChargeReason: extraReason,
-          extraTimeMinutes: parseInt(extraMinutes, 10) || 0,
-        }));
-        setNoticeType('success');
-        setNotice('Extra charges logged directly to booking bill.');
-        setIsModalOpen(false);
-      }
-    } catch (err) {
-      console.error('Error logging extra charge:', err);
+      const updatedExtra = (selectedJob.extraAmount || 0) + Number(chargeData.extraAmount);
+      
+      const updatedJob = {
+        ...selectedJob,
+        extraAmount: updatedExtra,
+        extraChargeReason: chargeData.reason,
+      };
+
+      setSelectedJob(updatedJob);
+      setAssignedJobs(prev => prev.map(j => j.id === updatedJob.id ? updatedJob : j));
+
       setNoticeType('success');
-      setNotice('Extra charges saved.');
-      setIsModalOpen(false);
+      setNotice(`Extra charges of ₹${chargeData.extraAmount} logged directly to customer bill.`);
+    } catch (err) {
+      console.error('Error adding extra charges:', err);
     } finally {
       setIsSubmitting(false);
     }
   };
 
+  // 8. Update Job Status Pipeline (IN_PROGRESS, COMPLETED)
+  const handleUpdateStatus = (newStatus) => {
+    if (!selectedJob) return;
+    const nowIso = new Date().toISOString();
+    const baseNum = Number(selectedJob.basePrice || 0);
+    const extraNum = Number(selectedJob.extraAmount || 0);
+    const finalPrice = Number(selectedJob.finalPrice) || (baseNum + extraNum);
+    const workerPayout = selectedJob.workerPayout !== undefined ? Number(selectedJob.workerPayout) : (finalPrice * 0.85);
+
+    const updatedJob = { 
+      ...selectedJob, 
+      status: newStatus,
+      finalPrice,
+      workerPayout,
+      ...(newStatus === 'COMPLETED' && {
+        scheduledEndTime: selectedJob.scheduledEndTime || nowIso,
+      }),
+    };
+    setSelectedJob(updatedJob);
+    setAssignedJobs(prev => prev.map(j => j.id === updatedJob.id ? updatedJob : j));
+
+    setNoticeType('success');
+    if (newStatus === 'IN_PROGRESS') {
+      setNotice('Work marked IN PROGRESS on customer bill. Mid-work adjustments enabled.');
+    } else if (newStatus === 'COMPLETED') {
+      setNotice('Job marked COMPLETED. 85% payout settled directly to your cooperative wallet!');
+    }
+  };
+
+  // Filter jobs by date if a calendar filter is active; otherwise show active non-completed work orders
+  const displayedJobs = useMemo(() => {
+    return assignedJobs.filter((job) => {
+      if (!filterDate) return job.status !== 'COMPLETED';
+      const dateVal = job.scheduledDate || job.scheduledStartTime;
+      if (!dateVal) return true;
+      const jobD = new Date(dateVal);
+      const selD = new Date(filterDate);
+      return (
+        jobD.getFullYear() === selD.getFullYear() &&
+        jobD.getMonth() === selD.getMonth() &&
+        jobD.getDate() === selD.getDate()
+      );
+    });
+  }, [assignedJobs, filterDate]);
+
   return (
-    <div className="max-w-4xl mx-auto px-4 sm:px-6 py-8 space-y-6 pb-20">
+    <div className="flex-1 flex flex-col w-full pb-28 animate-in fade-in duration-200">
       
-      {/* Top Profile Banner */}
-      <div className="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-xs flex flex-col sm:flex-row justify-between sm:items-center gap-4">
-        <div className="flex items-center gap-4">
-          <div className="w-14 h-14 rounded-2xl bg-[#1F4072] text-white flex items-center justify-center font-bold text-lg shadow-xs">
-            {worker.initials}
-          </div>
-          <div className="space-y-0.5">
-            <div className="flex items-center gap-2">
-              <h1 className="text-xl font-bold text-slate-900">{worker.name}</h1>
-              <Badge variant="ncct">{worker.ncctTier}</Badge>
-            </div>
-            <p className="text-xs text-slate-500 font-medium">{worker.trade} • {worker.society}</p>
-            <div className="flex items-center gap-2 pt-1">
-              <span className="flex items-center gap-1 text-[11px] text-emerald-600 font-semibold">
-                <ShieldCheck className="w-3.5 h-3.5" />
-                <span>Verified Artisan</span>
-              </span>
-              <span className="text-slate-300">•</span>
-              <button
-                onClick={handleToggleAvailability}
-                className={`text-[11px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1 transition-all cursor-pointer ${
-                  availability === 'AVAILABLE'
-                    ? 'bg-emerald-100 text-emerald-800'
-                    : 'bg-slate-100 text-slate-600'
-                }`}
-              >
-                <Power className="w-3 h-3" />
-                <span>{availability === 'AVAILABLE' ? 'Online & Available' : 'Offline'}</span>
-              </button>
-            </div>
-          </div>
-        </div>
+      {/* 1. ARTISAN HOMEPAGE */}
+      {currentView === 'home' && (
+        <div className="flex-1 flex flex-col w-full pb-16 animate-in fade-in duration-200">
+          
+          {/* Header Component with Select, GPS Toggle, and Monthly Earnings Card */}
+          <WorkerHomeHeader
+            worker={workerData}
+            workerLocation={workerLocation}
+            availability={availability}
+            isLocating={isLocating}
+            onToggleAvailability={handleToggleAvailability}
+            clusterRadius={clusterRadius}
+            onSelectClusterRadius={setClusterRadius}
+            monthlyEarnings={monthlyEarnings}
+            onOpenWallet={() => handleViewChange('wallet')}
+            onOpenProfile={() => handleViewChange('profile')}
+          />
 
-        {/* Wallet Balances Strip */}
-        <div className="flex items-center gap-4 pt-2 sm:pt-0 border-t sm:border-t-0 border-slate-100">
-          <div className="text-right">
-            <span className="text-[10px] text-slate-400 font-medium uppercase tracking-wider block">85% Payout Wallet</span>
-            <span className="text-lg font-extrabold text-emerald-600">₹4,200.00</span>
-          </div>
-          <div className="h-8 w-px bg-slate-200" />
-          <div className="text-right">
-            <span className="text-[10px] text-slate-400 font-medium uppercase tracking-wider block">5% Welfare Trust</span>
-            <span className="text-lg font-extrabold text-indigo-600">₹530.00</span>
-          </div>
-        </div>
-      </div>
+          {/* Main Content Sections */}
+          <main className="max-w-md md:max-w-4xl lg:max-w-5xl mx-auto w-full px-5 sm:px-6 pt-6 space-y-6">
+            
+            {/* Notice Flash Banner */}
+            {notice && (
+              <div className={`p-4 rounded-2xl border text-xs flex items-center justify-between gap-3 shadow-xs animate-in fade-in-50 duration-200 ${
+                noticeType === 'warning'
+                  ? 'bg-amber-50 border-amber-200 text-amber-900'
+                  : 'bg-emerald-50 border-emerald-200 text-emerald-900'
+              }`}>
+                <div className="flex items-center gap-2.5">
+                  {noticeType === 'warning' ? (
+                    <AlertCircle className="w-4 h-4 shrink-0 text-amber-600" />
+                  ) : (
+                    <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-600" />
+                  )}
+                  <span className="font-medium">{notice}</span>
+                </div>
+                
+                <button
+                  type="button"
+                  onClick={() => setNotice('')}
+                  className="text-slate-400 hover:text-slate-700 text-xs font-bold px-2 py-0.5 rounded cursor-pointer"
+                >
+                  ✕
+                </button>
+              </div>
+            )}
 
-      {/* Notice Banner */}
-      {notice && (
-        <div className={`p-3.5 rounded-xl border text-xs flex items-center gap-2 ${
-          noticeType === 'warning'
-            ? 'bg-amber-50 border-amber-200 text-amber-900'
-            : 'bg-emerald-50 border-emerald-200 text-emerald-800'
-        }`}>
-          {noticeType === 'warning' ? (
-            <AlertCircle className="w-4 h-4 shrink-0 text-amber-600" />
-          ) : (
-            <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-600" />
-          )}
-          <span>{notice}</span>
-        </div>
-      )}
+            {/* Active Work Assignments Section Header with Calendar Option */}
+            <div className="flex flex-row sm:flex-row sm:items-center justify-between gap-3 pt-2">
+              <div>
+                <h2 className="text-lg sm:text-xl font-black text-slate-900 font-display uppercase tracking-wide">
+                  Active Jobs
+                </h2>
+               
+              </div>
 
-      {/* Active Assignment Section */}
-      <div className="space-y-3">
-        <div className="flex justify-between items-center">
-          <h2 className="text-lg font-bold text-slate-900 tracking-tight">Active Work Assignment</h2>
-          <Badge variant={activeBooking.status === 'PENDING' ? 'warning' : 'default'}>
-            {activeBooking.status}
-          </Badge>
-        </div>
-
-        <div className="bg-white rounded-2xl border border-slate-200/80 shadow-xs p-6 space-y-6">
-          <div className="flex flex-col sm:flex-row justify-between sm:items-start gap-4 pb-4 border-b border-slate-100">
-            <div className="space-y-1">
-              <span className="text-[10px] text-slate-400 font-semibold uppercase tracking-wider">Customer Job</span>
-              <h3 className="font-bold text-base text-slate-900">{activeBooking.serviceTitle}</h3>
-              <div className="flex items-center gap-1.5 text-xs text-slate-500 pt-1">
-                <MapPin className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-                <span>{activeBooking.customerAddress} (~1.2 km away)</span>
+              {/* Calendar DatePicker Option without white container */}
+              <div className="flex items-center gap-2">
+                <DatePicker
+                  date={filterDate}
+                  setDate={setFilterDate}
+                  placeholder="Schedule Calendar"
+                />
+                {filterDate && (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => setFilterDate(null)}
+                    className="h-9 w-9 text-slate-500 hover:text-slate-900 cursor-pointer"
+                    title="Clear filter"
+                  >
+                    <FilterX className="w-4 h-4" />
+                  </Button>
+                )}
               </div>
             </div>
 
-            <div className="text-left sm:text-right">
-              <span className="text-[10px] text-slate-400 font-semibold uppercase tracking-wider block">Booking Code</span>
-              <span className="font-mono text-xs font-bold text-slate-900">{activeBooking.bookingCode}</span>
-            </div>
-          </div>
+            {/* Filter Active Pill Indicator if active */}
+            {filterDate && (
+              <div className="flex items-center justify-between bg-[#E5EEFF]/70 text-[#1F4072] px-3.5 py-2 rounded-xl text-xs font-medium border border-[#1F4072]/20">
+                <span className="flex items-center gap-2">
+                  <CalendarIcon className="w-3.5 h-3.5" />
+                  <span>Filtered by scheduled date: <strong>{new Date(filterDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}</strong></span>
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setFilterDate(null)}
+                  className="text-xs font-bold underline cursor-pointer hover:opacity-80"
+                >
+                  Reset
+                </button>
+              </div>
+            )}
 
-          {/* Action Buttons: Accept or Reject Cascade */}
-          <div className="flex flex-wrap items-center justify-between gap-3 p-4 bg-slate-50 rounded-xl border border-slate-200/60">
-            <div className="space-y-0.5">
-              <span className="text-xs font-bold text-slate-900">Job Assignment Decision</span>
-              <p className="text-[11px] text-slate-500">
-                Accept to initiate work or decline to allow the dispatch algorithm to reassign the next best artisan.
-              </p>
-            </div>
-
-            <div className="flex items-center gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setIsRejectModalOpen(true)}
-                className="text-rose-600 hover:bg-rose-50 border-rose-200 h-9"
-              >
-                <XCircle className="w-3.5 h-3.5 mr-1.5" />
-                <span>Decline & Reassign</span>
-              </Button>
-
-              <Button
-                variant="default"
-                size="sm"
-                onClick={handleAcceptGig}
-                disabled={activeBooking.status === 'ACCEPTED' || isSubmitting}
-                className="h-9"
-              >
-                <UserCheck className="w-3.5 h-3.5 mr-1.5" />
-                <span>{activeBooking.status === 'ACCEPTED' ? 'Job Accepted ✓' : 'Accept Assignment'}</span>
-              </Button>
-            </div>
-          </div>
-
-          {/* Mid-Work Extra Charges Section */}
-          <div className="p-4 rounded-xl bg-slate-50 border border-slate-200/80 space-y-3">
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
-              <div>
-                <div className="flex items-center gap-2">
-                  <span className="text-xs font-bold text-slate-900">Mid-Work Bill Adjustments</span>
-                  <Badge variant="primary">On-Site Adjustments</Badge>
+            {/* Minimal Job Cards Feed (No extra box design, emergency/standard pin, truncated location) */}
+            <div className="space-y-3">
+              {displayedJobs.length > 0 ? (
+                displayedJobs.map((job) => (
+                  <WorkerJobMinimalCard
+                    key={job.id}
+                    booking={job}
+                    onOpenDetails={handleOpenJobDetails}
+                    onOpenRejectModal={handleInitiateReject}
+                    isSubmitting={isSubmitting}
+                  />
+                ))
+              ) : (
+                <div className="p-8 text-center bg-white border border-dashed border-slate-200 rounded-2xl space-y-2">
+                  <p className="text-sm font-semibold text-slate-600">No scheduled assignments on this date.</p>
+                  <Button 
+                    type="button" 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={() => setFilterDate(null)}
+                    className="rounded-xl text-xs"
+                  >
+                    View All Active Assignments
+                  </Button>
                 </div>
-                <p className="text-[11px] text-slate-500 mt-0.5">
-                  While this job is active on-site, you can add extra charges for unexpected complications, extra time, or additional diagnosis.
+              )}
+            </div>
+
+            {/* Cooperative Welfare & Payout Promo Banner */}
+            <WorkerCoopPromoBanner
+              onOpenWallet={() => handleViewChange('wallet')}
+            />
+
+          </main>
+        </div>
+      )}
+
+      {/* 2. DETAILED JOB VIEW (Opened when user clicks on a minimal job card) */}
+      {currentView === 'job-detail' && (
+        <div className="flex-1 flex flex-col w-full pb-16 animate-in fade-in duration-200">
+          <TopHeaderBanner
+            title="ASSIGNED WORK ORDER"
+            // subtitle={`Job Code: ${selectedJob?.bookingCode || 'BK-2026'} • Detailed View`}
+            onBack={() => setCurrentView('home')}
+          />
+
+          <main className="max-w-md md:max-w-4xl lg:max-w-5xl mx-auto w-full px-5 sm:px-6 pt-6">
+            <WorkerJobDetailView
+              booking={selectedJob}
+              onBack={() => setCurrentView('home')}
+              onOpenRejectModal={handleInitiateReject}
+              onAddExtraCharges={handleAddExtraCharges}
+              onUpdateStatus={handleUpdateStatus}
+              isSubmitting={isSubmitting}
+            />
+          </main>
+        </div>
+      )}
+
+      {/* 3. JOBS / ACTIVE FEED VIEW (Accessible from Navbar 'JOBS' tab) */}
+      {currentView === 'jobs' && (
+        <div className="flex-1 flex flex-col w-full pb-16 animate-in fade-in duration-200">
+          <TopHeaderBanner
+            title="ASSIGNED WORK ORDERS"
+            subtitle="Queue of scheduled assignments and on-site dispatches"
+            onBack={() => handleViewChange('home')}
+          />
+
+          <main className="max-w-md md:max-w-4xl lg:max-w-5xl mx-auto w-full px-5 sm:px-6 pt-6 space-y-5">
+            
+            {/* Calendar Filter Option without white card container */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 py-1">
+              <div>
+                <p className="text-xs font-bold text-slate-800 uppercase tracking-wide">
+                  Schedule Filter
+                </p>
+                <p className="text-[11px] text-slate-500">
+                  Select a date to view future scheduled work orders
                 </p>
               </div>
-
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setIsModalOpen(true)}
-                className="shrink-0"
-              >
-                <Plus className="w-3.5 h-3.5 mr-1" />
-                <span>{activeBooking.extraAmount > 0 ? 'Update Extra Charges' : 'Add Mid-Work Extra Charges'}</span>
-              </Button>
+              <DatePicker
+                date={filterDate}
+                setDate={setFilterDate}
+                placeholder="Pick Date"
+              />
             </div>
 
-            {/* Current Breakdown Preview */}
-            <div className="p-3 bg-white rounded-lg border border-slate-200/60 flex flex-wrap justify-between items-center gap-2 text-xs">
-              <div>
-                <span className="text-slate-500">Base Tariff: </span>
-                <span className="font-bold text-slate-900">₹{activeBooking.basePrice}</span>
-              </div>
-              <div>
-                <span className="text-slate-500">Added Extra Fee: </span>
-                <span className={`font-bold ${activeBooking.extraAmount > 0 ? 'text-amber-600' : 'text-slate-400'}`}>
-                  {activeBooking.extraAmount > 0 ? `+₹${activeBooking.extraAmount} (${activeBooking.extraChargeReason || 'Extra time'})` : '₹0.00'}
-                </span>
-              </div>
-              <div>
-                <span className="text-slate-500">Extra Time: </span>
-                <span className="font-bold text-slate-900">+{activeBooking.extraTimeMinutes || 0} mins</span>
-              </div>
-              <div className="pl-3 border-l border-slate-200 font-semibold text-[#1F4072]">
-                Est. Bill: ₹{((activeBooking.basePrice || 250) + (activeBooking.extraAmount || 0) + 10).toFixed(2)}
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Reject & Cascade Modal */}
-      {isRejectModalOpen && (
-        <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl border border-slate-200 shadow-xl max-w-md w-full p-6 space-y-5 animate-in fade-in-50 zoom-in-95">
-            <div className="space-y-1">
-              <h3 className="font-bold text-lg text-slate-900">Decline Work Assignment</h3>
-              <p className="text-xs text-slate-500">
-                Declining this job will immediately trigger the <strong>Cascading Reassignment Algorithm</strong> to match the customer with the next optimal artisan.
-              </p>
-            </div>
-
+            {/* List of Minimal Cards */}
             <div className="space-y-3">
-              <label className="text-xs font-medium text-slate-700 block">Reason for Declining</label>
-              <select
-                value={rejectReason}
-                onChange={(e) => setRejectReason(e.target.value)}
-                className="w-full h-11 px-3 text-sm rounded-xl border border-slate-200 bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-900"
-              >
-                <option value="Schedule overlap / current emergency in progress">Schedule overlap / current emergency in progress</option>
-                <option value="Distance / traffic transit too far">Distance / traffic transit too far</option>
-                <option value="Required specialized tools unavailable">Required specialized tools unavailable</option>
-                <option value="Personal / health leave">Personal / health emergency</option>
-              </select>
+              {displayedJobs.map((job) => (
+                <WorkerJobMinimalCard
+                  key={job.id}
+                  booking={job}
+                  onOpenDetails={handleOpenJobDetails}
+                  onOpenRejectModal={handleInitiateReject}
+                  isSubmitting={isSubmitting}
+                />
+              ))}
             </div>
-
-            <div className="flex justify-end gap-3 pt-2 border-t border-slate-100">
-              <Button variant="outline" size="sm" onClick={() => setIsRejectModalOpen(false)}>
-                Cancel
-              </Button>
-              <Button variant="destructive" size="sm" onClick={handleRejectGig} disabled={isSubmitting}>
-                {isSubmitting ? 'Reassigning...' : 'Confirm Decline & Cascade'}
-              </Button>
-            </div>
-          </div>
+          </main>
         </div>
       )}
 
-      {/* Extra Charges Modal */}
-      {isModalOpen && (
-        <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl border border-slate-200 shadow-xl max-w-md w-full p-6 space-y-5 animate-in fade-in-50 zoom-in-95">
-            
-            <div className="space-y-1">
-              <h3 className="font-bold text-lg text-slate-900">Add Extra Charges to Bill</h3>
-              <p className="text-xs text-slate-500">
-                Logged directly onto booking <strong>{activeBooking.bookingCode}</strong> for bill generation.
-              </p>
-            </div>
+      {/* 4. COOPERATIVE WALLET VIEW (Navbar 'WALLET' tab) */}
+      {currentView === 'wallet' && (
+        <div className="flex-1 flex flex-col w-full pb-16 animate-in fade-in duration-200">
+          <TopHeaderBanner
+            title="COOPERATIVE WALLET"
+            //subtitle="85% direct payouts, 5% welfare trust fund & settlements"
+            onBack={() => handleViewChange('home')}
+          />
 
-            <form onSubmit={handleAddExtraCharge} className="space-y-4">
-              <div className="space-y-1">
-                <label className="text-xs font-medium text-slate-700 block">Extra Amount (₹)</label>
-                <Input
-                  type="number"
-                  step="0.01"
-                  value={extraAmount}
-                  onChange={(e) => setExtraAmount(e.target.value)}
-                  required
-                />
-              </div>
-
-              <div className="space-y-1">
-                <label className="text-xs font-medium text-slate-700 block">Reason</label>
-                <select
-                  value={extraReason}
-                  onChange={(e) => setExtraReason(e.target.value)}
-                  className="w-full h-11 px-3 text-sm rounded-xl border border-slate-200 bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-900"
-                >
-                  <option value="EXTRA_TIME_TAKEN">Extra Time Taken (Schedule Overrun)</option>
-                  <option value="UNFORESEEN_COMPLICATION">Unforeseen On-site Complication</option>
-                  <option value="SPECIALIZED_DIAGNOSIS">Specialized Diagnosis Required</option>
-                  <option value="HAZARDOUS_CONDITIONS">Hazardous / Confined Space Work</option>
-                </select>
-              </div>
-
-              <div className="space-y-1">
-                <label className="text-xs font-medium text-slate-700 block">Extra Time in Minutes</label>
-                <Input
-                  type="number"
-                  value={extraMinutes}
-                  onChange={(e) => setExtraMinutes(e.target.value)}
-                  placeholder="30"
-                />
-              </div>
-
-              <div className="space-y-1">
-                <label className="text-xs font-medium text-slate-700 block">Artisan Diagnostic Notes</label>
-                <Textarea
-                  value={extraNotes}
-                  onChange={(e) => setExtraNotes(e.target.value)}
-                  rows={3}
-                  required
-                />
-              </div>
-
-              <div className="flex justify-end gap-3 pt-2 border-t border-slate-100">
-                <Button variant="outline" size="sm" type="button" onClick={() => setIsModalOpen(false)}>
-                  Cancel
-                </Button>
-                <Button variant="default" size="sm" type="submit" disabled={isSubmitting}>
-                  {isSubmitting ? 'Logging...' : 'Submit to Customer Bill'}
-                </Button>
-              </div>
-            </form>
-
-          </div>
+          <main className="max-w-md md:max-w-4xl lg:max-w-5xl mx-auto w-full px-5 sm:px-6 pt-6 space-y-6">
+            <WorkerWalletView
+              walletBalance={monthlyEarnings}
+              welfareBalance={currentMonthWelfare}
+              cooperativeName={workerData.society}
+              assignedJobs={assignedJobs}
+              monthlyBreakdown={monthlyBreakdown}
+            />
+          </main>
         </div>
       )}
+
+      {/* 5. ARTISAN PROFILE VIEW (From Avatar in Header) */}
+      {currentView === 'profile' && (
+        <WorkerProfileView
+          worker={workerData}
+          onBack={() => handleViewChange('home')}
+          onOpenWallet={() => handleViewChange('wallet')}
+          onUpdateWorker={(updated) => {
+            setWorkerData(updated);
+            setNoticeType('success');
+            setNotice('Profile details updated successfully.');
+          }}
+        />
+      )}
+
+      {/* Cascading Rejection Modal */}
+      <WorkerRejectModal
+        isOpen={isRejectModalOpen}
+        onClose={() => setIsRejectModalOpen(false)}
+        bookingCode={jobToReject?.bookingCode}
+        onConfirmReject={handleConfirmReject}
+        isSubmitting={isSubmitting}
+      />
 
     </div>
   );

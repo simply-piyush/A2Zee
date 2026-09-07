@@ -28,8 +28,8 @@ export default function LandingPage() {
         
              
 
-              {/* Headline in Luckiest Guy */}
-              <h1 className="font-display font-normal text-4xl sm:text-6xl lg:text-7xl xl:text-8xl text-slate-950 tracking-wide uppercase leading-[0.94]">
+              {/* Headline in Outfit */}
+              <h1 className="font-display font-extrabold text-4xl sm:text-6xl lg:text-7xl xl:text-8xl text-slate-950 tracking-tight uppercase leading-[0.96]">
                 YOUR NEED.<br />
                 <span className="text-[#1F4072]">
                   OUR PEOPLE.
@@ -37,8 +37,8 @@ export default function LandingPage() {
                 ONE PLATFORM.
               </h1>
 
-              {/* Subtitle in Fredoka */}
-              <p className="font-secondary text-base sm:text-lg lg:text-xl text-slate-700 max-w-xl leading-relaxed font-medium">
+              {/* Subtitle in DM Sans */}
+              <p className="font-secondary text-base sm:text-lg lg:text-xl text-slate-700 max-w-xl leading-relaxed font-normal">
                 India's premier worker-owned cooperative gig marketplace. Verified karigars at your doorstep on two wheels — fair living wages, 0% corporate cut.
               </p>
 
@@ -107,7 +107,7 @@ export default function LandingPage() {
                 A BIT
               </span>
 
-              <h2 className="font-display font-normal text-4xl sm:text-5xl text-slate-900 tracking-wide uppercase">
+              <h2 className="font-display font-bold text-4xl sm:text-5xl text-slate-900 tracking-tight uppercase">
                 ABOUT US
               </h2>
 
@@ -144,7 +144,7 @@ export default function LandingPage() {
       {/* 4. MINIMALIST BOTTOM CALL TO ACTION (User Mockup)                         */}
       {/* ========================================================================= */}
       <section id="contact" className="max-w-4xl mx-auto px-4 text-center space-y-6 pt-12 pb-20 sm:pb-28 scroll-mt-36">
-        <h2 className="font-display text-3xl sm:text-4xl lg:text-5xl text-slate-950 tracking-wide uppercase leading-tight">
+        <h2 className="font-display font-bold text-3xl sm:text-4xl lg:text-5xl text-slate-950 tracking-tight uppercase leading-tight">
           READY FOR DEPENDABLE HOME SERVICE?
         </h2>
         <p className="font-secondary text-sm sm:text-base text-slate-800 max-w-xl mx-auto font-medium leading-relaxed">

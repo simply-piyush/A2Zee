@@ -274,14 +274,7 @@ export default function TrackExpertPage() {
         title="LIVE ARTISAN TRACKING"
         subtitle={`Ref: #${booking.bookingCode || booking.id}`}
         onBack={() => router.push('/user')}
-        rightAction={
-          <Badge 
-            variant={isPaid ? 'success' : 'warning'} 
-            className="text-xs px-3 py-1 font-semibold"
-          >
-            {isPaid ? 'PAID' : 'PAYMENT PENDING'}
-          </Badge>
-        }
+        
       />
 
       <div className="max-w-2xl mx-auto w-full px-4 sm:px-6 pt-6 space-y-6">
@@ -306,7 +299,7 @@ export default function TrackExpertPage() {
 
         {/* Top Summary Bar */}
         <div className="bg-white p-4 sm:p-5 rounded-3xl border border-gray-200/90 shadow-xs flex flex-wrap items-center justify-between gap-3">
-          <div className="flex items-center gap-2">
+          <div className="flex flex-row items-center gap-2">
             <Badge 
               variant={isEmergency ? 'danger' : 'secondary'}
               className="text-xs font-semibold px-3 py-1"
@@ -332,7 +325,7 @@ export default function TrackExpertPage() {
             </Badge>
           </div>
 
-          <div className="text-right">
+          <div className="flex flex-col justify-center items-center ">
             <span className="text-[10px] text-gray-400 block uppercase font-medium">Payable Amount</span>
             <span className="text-lg font-bold text-[#1F4072]">₹{totalPayable.toFixed(2)}</span>
           </div>
@@ -422,9 +415,7 @@ export default function TrackExpertPage() {
             <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider">
               Job Description & Scope
             </h3>
-            <span className="text-xs font-semibold text-[#1F4072] bg-blue-50 px-2.5 py-1 rounded-lg">
-              {booking.serviceTitle || booking.title || 'Gig Service'}
-            </span>
+            
           </div>
 
           <p className="text-sm text-slate-700 leading-relaxed bg-slate-50 p-3.5 rounded-2xl border border-slate-100 font-normal">

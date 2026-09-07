@@ -3,6 +3,7 @@
 import React, { createContext, useContext, useState, useRef, useEffect } from 'react';
 import { ChevronDown, Check } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 const SelectContext = createContext(null);
 
@@ -74,6 +75,7 @@ export function SelectTrigger({
   className = '', 
   children, 
   id,
+  hideChevron = false,
   ...props 
 }) {
   const { open, setOpen, disabled } = useContext(SelectContext);
@@ -92,15 +94,17 @@ export function SelectTrigger({
       )}
       {...props}
     >
-      <div className="flex-1 text-left truncate mr-2">
+      <div className={cn('flex-1 text-left min-w-0', !hideChevron && 'truncate mr-2')}>
         {children}
       </div>
-      <ChevronDown 
-        className={cn(
-          'w-4 h-4 text-gray-500 shrink-0 transition-transform duration-200',
-          open && 'rotate-180 text-[#1F4072]'
-        )} 
-      />
+      {!hideChevron && (
+        <ChevronDown 
+          className={cn(
+            'w-4 h-4 text-gray-500 shrink-0 transition-transform duration-200',
+            open && 'rotate-180 text-[#1F4072]'
+          )} 
+        />
+      )}
     </button>
   );
 }
@@ -124,17 +128,20 @@ export function SelectContent({ className = '', children, ...props }) {
   return (
     <div
       className={cn(
-        'absolute left-0 right-0 z-50 mt-2 max-h-72 overflow-y-auto bg-white rounded-2xl border-2 border-[#1F4072] shadow-2xl p-1.5 animate-in fade-in zoom-in-95 duration-150 scrollbar-none no-scrollbar',
+        'absolute left-0 right-0 z-[9999] mt-2 bg-white rounded-2xl border-2 border-[#1F4072] shadow-2xl p-1 animate-in fade-in zoom-in-95 duration-150 overflow-hidden',
         className
       )}
       style={{
-        boxShadow: '0 16px 40px -10px rgba(31, 64, 114, 0.25)'
+        boxShadow: '0 20px 50px -10px rgba(31, 64, 114, 0.35)',
+        zIndex: 9999
       }}
       {...props}
     >
-      <div className="space-y-1">
-        {children}
-      </div>
+      <ScrollArea className="max-h-48 sm:max-h-56 w-full" type="always">
+        <div className="space-y-1 p-1 pr-2.5">
+          {children}
+        </div>
+      </ScrollArea>
     </div>
   );
 }

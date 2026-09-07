@@ -15,9 +15,19 @@ export async function GET(request) {
 
     if (!userId && !workerId) {
       const session = await getAuthSession(request);
-      if (session?.id) {
-        if (session.role === 'WORKER') workerId = session.workerId || session.id;
-        else userId = session.id;
+      const sessionUserId = session?.sub || session?.id;
+      if (sessionUserId) {
+        if (session.role === 'WORKER') {
+          try {
+            const worker = await prisma.worker.findUnique({ where: { userId: sessionUserId } });
+            if (worker) workerId = worker.id;
+            else userId = sessionUserId;
+          } catch (e) {
+            userId = sessionUserId;
+          }
+        } else {
+          userId = sessionUserId;
+        }
       }
     }
 
@@ -82,7 +92,8 @@ export async function POST(request) {
       latitude = 22.6950, 
       longitude = 88.4550, 
       isDefault = false,
-      isCurrent = false 
+      isCurrent = false,
+      replaceOldest = false
     } = body;
 
     if (!addressLine || !addressLine.trim()) {
@@ -91,9 +102,19 @@ export async function POST(request) {
 
     if (!userId && !workerId) {
       const session = await getAuthSession(request);
-      if (session?.id) {
-        if (session.role === 'WORKER') workerId = session.workerId || session.id;
-        else userId = session.id;
+      const sessionUserId = session?.sub || session?.id;
+      if (sessionUserId) {
+        if (session.role === 'WORKER') {
+          try {
+            const worker = await prisma.worker.findUnique({ where: { userId: sessionUserId } });
+            if (worker) workerId = worker.id;
+            else userId = sessionUserId;
+          } catch (e) {
+            userId = sessionUserId;
+          }
+        } else {
+          userId = sessionUserId;
+        }
       }
     }
 
@@ -105,15 +126,28 @@ export async function POST(request) {
       } catch (e) {}
     }
 
-    // 1. Enforce max 5 addresses per user
+    // 1. Enforce max 5 addresses per user (with replaceOldest fallback)
     if (userId) {
       try {
         const count = await prisma.address.count({ where: { userId } });
         if (count >= 5) {
-          return NextResponse.json({
-            success: false,
-            error: 'Maximum of 5 saved addresses reached. Please delete an address before adding a new one.',
-          }, { status: 400 });
+          if (replaceOldest) {
+            const oldest = await prisma.address.findFirst({
+              where: { userId, isDefault: false },
+              orderBy: { createdAt: 'asc' },
+            }) || await prisma.address.findFirst({
+              where: { userId },
+              orderBy: { createdAt: 'asc' },
+            });
+            if (oldest) {
+              await prisma.address.delete({ where: { id: oldest.id } });
+            }
+          } else {
+            return NextResponse.json({
+              success: false,
+              error: 'Maximum of 5 saved addresses reached. Please remove an older address first.',
+            }, { status: 400 });
+          }
         }
       } catch (e) {}
     }
