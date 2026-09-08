@@ -27,29 +27,18 @@ const WORKER_PORTAL_NAV_ITEMS = [
   { id: "wallet", label: "WALLET" },
 ];
 
-// Admin Portal items: Bookings, Workers, Customers, Approvals, Ledger
-const ADMIN_PORTAL_NAV_ITEMS = [
-  { id: "bookings", label: "BOOKINGS" },
-  { id: "workers", label: "WORKERS" },
-  { id: "customers", label: "CUSTOMERS" },
-  { id: "verifications", label: "APPROVALS" },
-  { id: "revenue", label: "LEDGER" },
-];
-
 export function Navbar() {
   const router = useRouter();
   const pathname = usePathname();
   
   const isUserPortal = pathname?.startsWith('/user');
   const isWorkerPortal = pathname?.startsWith('/worker');
-  const isAdminPortal = pathname?.startsWith('/admin');
 
   let navItems = LANDING_NAV_ITEMS;
   if (isUserPortal) navItems = USER_PORTAL_NAV_ITEMS;
   else if (isWorkerPortal) navItems = WORKER_PORTAL_NAV_ITEMS;
-  else if (isAdminPortal) navItems = ADMIN_PORTAL_NAV_ITEMS;
 
-  const [activeTab, setActiveTab] = useState(isAdminPortal ? "bookings" : "home");
+  const [activeTab, setActiveTab] = useState("home");
   const [userView, setUserView] = useState("home");
 
   const activeTabRef = useRef("home");
@@ -66,30 +55,8 @@ export function Navbar() {
 
   // Set default tab on route change
   useEffect(() => {
-    if (isAdminPortal) {
-      setActiveTab("bookings");
-    } else {
-      setActiveTab("home");
-    }
-  }, [pathname, isAdminPortal]);
-
-  // Listen to tab changes dispatched by admin portal
-  useEffect(() => {
-    if (!isAdminPortal) return;
-
-    const handleAdminTabChange = (e) => {
-      const targetId = e.detail;
-      if (targetId && ADMIN_PORTAL_NAV_ITEMS.some(n => n.id === targetId)) {
-        setActiveTab(targetId);
-      }
-    };
-
-    window.addEventListener('a2zee-admin-tab-change', handleAdminTabChange);
-
-    return () => {
-      window.removeEventListener('a2zee-admin-tab-change', handleAdminTabChange);
-    };
-  }, [isAdminPortal]);
+    setActiveTab("home");
+  }, [pathname]);
 
 
   // Listen to tab changes and view changes dispatched by user portal
@@ -252,13 +219,7 @@ export function Navbar() {
     setActiveTab(id);
     movePill(id);
 
-    // 1. Handle Admin Portal In-App Tab Switch
-    if (isAdminPortal) {
-      window.dispatchEvent(new CustomEvent("a2zee-admin-tab", { detail: id }));
-      return;
-    }
-
-    // 2. Handle Worker Portal In-App Tab Switch
+    // 1. Handle Worker Portal In-App Tab Switch
     if (isWorkerPortal) {
       window.dispatchEvent(new CustomEvent("a2zee-worker-tab", { detail: id }));
       return;
@@ -308,8 +269,9 @@ export function Navbar() {
     }, 1800);
   };
 
-  // Hide floating navbar on auth portal, or when in create job page/view
+  // Hide floating navbar on admin portal, auth portal, or when in create job page/view
   if (
+    pathname?.startsWith('/admin') ||
     pathname === '/auth' ||
     pathname === '/user/create-job' ||
     (isUserPortal && userView === 'create')

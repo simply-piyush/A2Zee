@@ -25,24 +25,6 @@ export default function AdminDashboardPage() {
   const [actionNotice, setActionNotice] = useState('');
   const [actionNoticeType, setActionNoticeType] = useState('success');
 
-  // Sync with floating bottom Navbar component (components/ui/navbar.jsx)
-  useEffect(() => {
-    const handleAdminTab = (e) => {
-      if (e.detail) {
-        setActiveTab(e.detail);
-      }
-    };
-    window.addEventListener('a2zee-admin-tab', handleAdminTab);
-    return () => {
-      window.removeEventListener('a2zee-admin-tab', handleAdminTab);
-    };
-  }, []);
-
-  // Whenever activeTab changes (e.g. from sidebar), notify floating navbar
-  useEffect(() => {
-    window.dispatchEvent(new CustomEvent('a2zee-admin-tab-change', { detail: activeTab }));
-  }, [activeTab]);
-
   // Load Admin Stats & Verification Queue
   const loadAdminData = async (silent = false) => {
     if (!silent) setIsLoading(true);
@@ -144,7 +126,7 @@ export default function AdminDashboardPage() {
   ];
 
   return (
-    <div className="min-h-screen bg-[#FFF6F0] text-slate-900 font-secondary selection:bg-[#1F4072]/20 selection:text-[#1F4072] pb-28">
+    <div className="min-h-screen bg-[#FFF6F0] text-slate-900 font-secondary selection:bg-[#1F4072]/20 selection:text-[#1F4072] pb-12">
       
       {/* Top Header: Branded Wavy Landing Header in Admin Mode with Logout button */}
       <LandingHeader 
