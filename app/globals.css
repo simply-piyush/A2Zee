@@ -207,19 +207,36 @@ body::-webkit-scrollbar {
   --sal: env(safe-area-inset-left, 0px);
 }
 
+html {
+  height: 100%;
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  min-height: 100%;
+  min-height: 100lvh;
+  min-height: -webkit-fill-available;
+}
+
+/* Prevent layout shift or aspect ratio distortion when system navigation bar overlays */
+.min-h-screen {
+  min-height: 100vh;
+  min-height: 100lvh;
+}
+
 .pt-safe {
-  padding-top: env(safe-area-inset-top, 0px);
+  padding-top: max(0.5rem, env(safe-area-inset-top, 0px));
 }
 
 .pb-safe {
-  padding-bottom: env(safe-area-inset-bottom, 0px);
+  padding-bottom: max(1rem, env(safe-area-inset-bottom, 0px));
 }
 
-/* Fullscreen & Standalone PWA mobile UX */
-@media all and (display-mode: fullscreen), all and (display-mode: standalone) {
-  body {
-    -webkit-tap-highlight-color: transparent;
+/* Standalone & Fullscreen PWA mobile UX */
+@media all and (display-mode: standalone), all and (display-mode: fullscreen) {
+  html, body {
     overscroll-behavior-y: none;
+    -webkit-tap-highlight-color: transparent;
   }
 }
 

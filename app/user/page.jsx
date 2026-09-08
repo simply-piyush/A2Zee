@@ -476,6 +476,8 @@ export default function UserAppPage() {
 
       const payload = {
         trade: selectedTrade,
+        serviceTitle: finalDesc,
+        category: selectedTrade,
         jobType: jobType,
         isEmergency: isEmergency,
         isCustomIssue: true,
@@ -579,7 +581,7 @@ export default function UserAppPage() {
   const activeBookingsList = myBookings.filter(b => b.status !== 'COMPLETED' && b.status !== 'CANCELLED');
 
   return (
-    <div className="min-h-screen bg-[#FFF6F0] text-[#1F4072] font-secondary flex flex-col justify-between selection:bg-[#1F4072]/20 selection:text-[#1F4072] pb-28">
+    <div className="min-h-screen bg-[#FFF6F0] text-[#1F4072] font-secondary flex flex-col justify-start selection:bg-[#1F4072]/20 selection:text-[#1F4072] pb-[max(7rem,calc(env(safe-area-inset-bottom)+5rem))]">
       
       {/* Animated Done Modal with auto-redirect to homepage */}
       <BookingSuccessModal

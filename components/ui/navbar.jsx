@@ -318,7 +318,7 @@ export function Navbar() {
   }
 
   return (
-    <header className="fixed bottom-[max(0.75rem,env(safe-area-inset-bottom))] sm:bottom-5 left-1/2 -translate-x-1/2 z-50 select-none max-w-[98vw] pointer-events-auto">
+    <header className="fixed bottom-[max(0.75rem,calc(env(safe-area-inset-bottom)+0.35rem))] sm:bottom-5 left-1/2 -translate-x-1/2 z-50 select-none max-w-[98vw] pointer-events-auto">
       <nav
         ref={containerRef}
         className="relative inline-flex items-center bg-white border-2 border-black rounded-full p-1 sm:p-1.5 shadow-[0_12px_36px_rgba(0,0,0,0.18)] max-w-full overflow-x-auto scrollbar-none"

@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { rankArtisans } from '@/lib/dispatchAlgorithm';
+import { rankArtisans, getCanonicalSkillName } from '@/lib/dispatchAlgorithm';
 import { getCached, setCached } from '@/lib/apiCache';
 
 export const dynamic = 'force-dynamic';
@@ -33,20 +33,10 @@ export async function GET(request) {
     }
 
     let skillPattern = null;
+    let canonicalSkillName = null;
     if (skillParam && skillParam !== 'ALL' && skillParam !== 'All') {
-      const s = skillParam.toLowerCase();
-      let rootSkill = skillParam;
-      if (s.includes('electr')) rootSkill = 'Electrician';
-      else if (s.includes('plumb')) rootSkill = 'Plumb';
-      else if (s.includes('carpent')) rootSkill = 'Carpent';
-      else if (s.includes('clean')) rootSkill = 'Clean';
-      else if (s.includes('house') || s.includes('maid') || s.includes('cook')) rootSkill = 'Househelp';
-      else if (s.includes('paint')) rootSkill = 'Paint';
-      else if (s.includes('technic') || s.includes('appliance')) rootSkill = 'Technic';
-      else if (s.includes('care')) rootSkill = 'Care';
-      else if (s.includes('driv')) rootSkill = 'Driv';
-      else if (s.includes('garden')) rootSkill = 'Garden';
-      skillPattern = `%${rootSkill}%`;
+      canonicalSkillName = getCanonicalSkillName(skillParam);
+      skillPattern = `%${canonicalSkillName}%`;
     }
 
     let candidateWorkers = [];
@@ -134,6 +124,7 @@ export async function GET(request) {
         startTime,
         endTime,
         excludedWorkerIds: [],
+        requiredSkillName: canonicalSkillName,
       });
 
       const ranked = dispatchResult.rankedCandidates.map((c) => {

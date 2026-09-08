@@ -56,12 +56,19 @@ export async function POST(request, { params }) {
           const updatedRejected = Array.from(new Set([...currentRejected, activeRejectingWorkerId]));
 
           // 3. Find candidate workers with matching skill
-          const skillFilter = booking.service?.skillId ? { skillId: booking.service.skillId } : {};
+          const requiredSkillId = booking.service?.skillId;
+          if (!requiredSkillId) {
+            return NextResponse.json({
+              success: false,
+              error: 'Cannot reassign: Booking has no associated service skill.',
+            }, { status: 400 });
+          }
+
           const candidateWorkers = await prisma.worker.findMany({
             where: {
               verificationStatus: 'VERIFIED',
               skills: {
-                some: skillFilter,
+                some: { skillId: requiredSkillId },
               },
             },
             include: {
@@ -86,20 +93,16 @@ export async function POST(request, { params }) {
             },
           });
 
-          // Filter candidate workers to those matching the service skill
-          const serviceSkillWorkers = candidateWorkers.filter((w) =>
-            w.skills.some((ws) => ws.skillId === booking.service?.skillId)
-          );
-
-          // 4. Run dispatch engine excluding all rejected workers
+          // 4. Run dispatch engine strictly requiring this skill and excluding all rejected workers
           const dispatchResult = rankArtisans({
             userLat: booking.latitude || 22.6950,
             userLng: booking.longitude || 88.4550,
-            workers: serviceSkillWorkers.length > 0 ? serviceSkillWorkers : candidateWorkers,
+            workers: candidateWorkers,
             isEmergency: booking.isEmergency,
             startTime: booking.scheduledStartTime,
             endTime: booking.scheduledEndTime,
             excludedWorkerIds: updatedRejected,
+            requiredSkillId,
           });
 
           const nextBestArtisan = dispatchResult.topCandidate;

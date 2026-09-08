@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getAuthSession } from '@/lib/auth';
 import { dbStore } from '@/lib/dbStore';
-import { rankArtisans } from '@/lib/dispatchAlgorithm';
+import { rankArtisans, getCanonicalSkillName } from '@/lib/dispatchAlgorithm';
 import { getCached, setCached, invalidateTags } from '@/lib/apiCache';
 
 /**
@@ -291,35 +291,70 @@ export async function POST(request) {
       let userLng = inputLng ? parseFloat(inputLng) : null;
 
       if (!validCustomer) {
-        // Find or upsert real User in PostgreSQL by phone to get genuine UUID
-        const phone = customerPhone || session?.phone || '+919899011223';
-        const name = customerName || session?.name || 'Priya Soni';
-        const email = session?.email || `${phone.replace(/[^0-9]/g, '')}@a2zee.local`;
+        const rawPhone = customerPhone || session?.phone || '+919899011223';
+        const cleanPhone = rawPhone.replace(/[^\d+]/g, '');
+        const last10 = cleanPhone.slice(-10);
+        const name = customerName || session?.name || 'Customer';
 
-        validCustomer = await prisma.user.upsert({
-          where: { phone },
-          update: {
-            fullName: name,
-            ...(userLat && { latitude: userLat }),
-            ...(userLng && { longitude: userLng }),
-          },
-          create: {
-            fullName: name,
-            phone,
-            email,
-            passwordHash: '$2b$10$dummyhashforguestcustomeraccount1234567890',
-            role: 'CUSTOMER',
-            latitude: userLat || 22.6950,
-            longitude: userLng || 88.4550,
+        // 1. Try finding by raw phone, clean phone, or last 10 digits
+        validCustomer = await prisma.user.findFirst({
+          where: {
+            OR: [
+              { phone: rawPhone },
+              { phone: cleanPhone },
+              ...(last10 ? [{ phone: { contains: last10 } }] : []),
+              ...(session?.email ? [{ email: session.email }] : []),
+            ],
           },
         });
+
+        if (validCustomer) {
+          if (userLat && userLng) {
+            try {
+              validCustomer = await prisma.user.update({
+                where: { id: validCustomer.id },
+                data: { latitude: userLat, longitude: userLng },
+              });
+            } catch (updErr) {
+              console.warn('Customer coords update note:', updErr.message);
+            }
+          }
+        } else {
+          // 2. Create new user with guaranteed unique email
+          const uniqueEmail = session?.email || `cust_${last10 || 'user'}_${Date.now()}@a2zee.local`;
+          validCustomer = await prisma.user.create({
+            data: {
+              fullName: name,
+              phone: rawPhone,
+              email: uniqueEmail,
+              passwordHash: '$2b$10$dummyhashforguestcustomeraccount1234567890',
+              role: 'CUSTOMER',
+              latitude: userLat || 22.6950,
+              longitude: userLng || 88.4550,
+            },
+          });
+        }
       }
 
       const customerId = validCustomer.id; // 100% Guaranteed valid PostgreSQL UUID
       userLat = userLat || validCustomer.latitude || 22.6950;
       userLng = userLng || validCustomer.longitude || 88.4550;
 
-      // 2. Resolve Service (ensure inputServiceId is validated for UUID before findUnique)
+      // 2. Resolve Skill & Service using Canonicalization
+      const targetTrade = trade || body.tradeCategory || body.category || '';
+      const requestedTitle = serviceTitle || body.customTitle || body.customDesc || '';
+      const canonicalSkillName = getCanonicalSkillName(targetTrade || requestedTitle);
+
+      // Find the Skill record in PostgreSQL
+      let targetSkill = null;
+      if (canonicalSkillName) {
+        targetSkill = await prisma.skill.findFirst({
+          where: { name: { equals: canonicalSkillName, mode: 'insensitive' } },
+          include: { services: true },
+        });
+      }
+
+      // Check if direct inputServiceId was provided
       let service = null;
       if (inputServiceId && isValidUUID(inputServiceId)) {
         try {
@@ -327,31 +362,59 @@ export async function POST(request) {
             where: { id: inputServiceId },
             include: { skill: true },
           });
+          if (service?.skill) {
+            targetSkill = service.skill;
+          }
         } catch (svcErr) {
           console.warn('Service lookup by UUID note:', svcErr.message);
         }
       }
 
-      if (!service && serviceTitle) {
-        service = await prisma.service.findFirst({
-          where: { name: { contains: serviceTitle, mode: 'insensitive' } },
-          include: { skill: true },
-        });
+      // If we have targetSkill, find the best matching service under that skill
+      if (targetSkill && !service) {
+        if (requestedTitle && targetSkill.services?.length > 0) {
+          service = targetSkill.services.find(s =>
+            s.name.toLowerCase().includes(requestedTitle.toLowerCase()) ||
+            requestedTitle.toLowerCase().includes(s.name.toLowerCase())
+          );
+        }
+        if (!service && targetSkill.services?.length > 0) {
+          service = targetSkill.services[0];
+        }
+        if (!service) {
+          service = await prisma.service.findFirst({
+            where: { skillId: targetSkill.id },
+            include: { skill: true },
+          });
+        }
       }
 
-      if (!service && trade) {
+      // If still no service, search by service name
+      if (!service && requestedTitle) {
         service = await prisma.service.findFirst({
-          where: {
-            skill: {
-              name: { contains: trade, mode: 'insensitive' },
-            },
-          },
+          where: { name: { contains: requestedTitle, mode: 'insensitive' } },
           include: { skill: true },
         });
+        if (service?.skill) {
+          targetSkill = service.skill;
+        }
       }
 
-      if (!service) {
+      // Strict validation: Reject if skill cannot be resolved rather than assigning wrong skill
+      if (!targetSkill && !service?.skill) {
+        return NextResponse.json({
+          success: false,
+          error: `Could not identify required skill category for '${targetTrade || requestedTitle || 'service'}'. Please select a valid skill.`,
+        }, { status: 400 });
+      }
+
+      const activeSkillId = targetSkill?.id || service?.skillId;
+      const activeSkillName = targetSkill?.name || service?.skill?.name;
+
+      // Ensure service object is present under the active skill
+      if (!service && activeSkillId) {
         service = await prisma.service.findFirst({
+          where: { skillId: activeSkillId },
           include: { skill: true },
         });
       }
@@ -359,7 +422,7 @@ export async function POST(request) {
       if (!service) {
         return NextResponse.json({
           success: false,
-          error: 'No active service found. Please seed services first.',
+          error: `No service found for skill category: ${activeSkillName}.`,
         }, { status: 400 });
       }
 
@@ -368,12 +431,12 @@ export async function POST(request) {
       let startTime = inputStartTime ? new Date(inputStartTime) : (scheduledDate ? new Date(scheduledDate) : now);
       let endTime = inputEndTime ? new Date(inputEndTime) : new Date(startTime.getTime() + 2 * 60 * 60 * 1000); // 2h slot
 
-      // 4. Query All Candidate Workers with Matching Skill & Verified Status
+      // 4. Query ONLY Candidate Workers who possess this exact verified skill
       const candidateWorkers = await prisma.worker.findMany({
         where: {
           verificationStatus: 'VERIFIED',
           skills: {
-            some: { skillId: service.skillId },
+            some: { skillId: activeSkillId },
           },
         },
         include: {
@@ -402,7 +465,7 @@ export async function POST(request) {
         },
       });
 
-      // 5. Run Intelligent Dual-Mode Dispatch Engine
+      // 5. Run Intelligent Dual-Mode Dispatch Engine with strict skill enforcement
       const dispatchResult = rankArtisans({
         userLat,
         userLng,
@@ -411,19 +474,37 @@ export async function POST(request) {
         startTime,
         endTime,
         excludedWorkerIds: [],
+        requiredSkillId: activeSkillId,
+        requiredSkillName: activeSkillName,
       });
 
       let assignedWorker = dispatchResult.topCandidate;
 
-      // If emergency and no online worker found, return informative 404
+      // If no candidate found for this specific skill, return 404 error
       if (!assignedWorker) {
         return NextResponse.json({
           success: false,
           error: isEmergency
-            ? 'No online & available artisans found within 15 km for emergency dispatch. Please check standard scheduled booking.'
-            : 'No artisans currently available without schedule conflict for this time slot.',
+            ? `No online & available verified ${activeSkillName} artisans found within cluster for emergency dispatch. Please check standard scheduled booking.`
+            : `No verified ${activeSkillName} artisans currently available without schedule conflict for this time slot.`,
           candidatesCount: candidateWorkers.length,
+          requiredSkill: activeSkillName,
         }, { status: 404 });
+      }
+
+      // Final integrity assertion: Verify assigned worker possesses the required skill
+      const workerSkillsList = assignedWorker.worker?.skills || [];
+      const hasRequiredSkill = workerSkillsList.some(
+        (ws) => ws.skillId === activeSkillId ||
+                ws.skill?.id === activeSkillId ||
+                getCanonicalSkillName(ws.skill?.name || ws.name) === activeSkillName
+      );
+
+      if (!hasRequiredSkill) {
+        return NextResponse.json({
+          success: false,
+          error: `Dispatch validation failed: Worker ${assignedWorker.workerName} does not possess skill ${activeSkillName}.`,
+        }, { status: 500 });
       }
 
       // 6. Pricing Calculation

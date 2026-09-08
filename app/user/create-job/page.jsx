@@ -106,6 +106,8 @@ function CreateJobForm() {
 
       const payload = {
         trade: selectedTrade,
+        serviceTitle: finalDesc,
+        category: selectedTrade,
         jobType: jobType,
         isEmergency: isEmergency,
         isCustomIssue: true,

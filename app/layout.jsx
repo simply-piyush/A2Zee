@@ -10,6 +10,7 @@ export const viewport = {
   maximumScale: 5,
   userScalable: true,
   viewportFit: 'cover',
+  interactiveWidget: 'overlays-content',
 };
 
 export const metadata = {
