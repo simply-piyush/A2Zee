@@ -125,6 +125,9 @@ model Worker {
   skills             WorkerSkill[]
   bookings           Booking[]
   addresses          Address[]
+
+  @@index([verificationStatus, availabilityStatus])
+  @@index([cooperativeId])
 }
 
 
@@ -225,6 +228,12 @@ model Booking {
 
   payment               Payment?
   review                Review?
+
+  @@index([createdAt(sort: Desc)])
+  @@index([status])
+  @@index([customerId])
+  @@index([workerId])
+  @@index([bookingDate])
 }
 
 
@@ -247,6 +256,8 @@ model Payment {
 
   // Relation
   booking             Booking       @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+
+  @@index([paymentStatus])
 }
 
 

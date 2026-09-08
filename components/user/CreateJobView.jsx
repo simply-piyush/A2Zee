@@ -26,6 +26,7 @@ export function CreateJobView({
   setEndHour,
   nearbyArtisans = [],
   userCoords = { lat: 22.6950, lng: 88.4550 },
+  userLocation = 'Current Area',
   assignedArtisan,
   bookingNotice,
   isSubmitting,
@@ -226,9 +227,14 @@ export function CreateJobView({
           </div>
         )}
 
-        {/* Instant Emergency GPS Map Section */}
+        {/* Instant Emergency GPS Map Section (OpenStreetMap) */}
         {jobType === 'Instant' && (
-          <EmergencyRadarMap nearbyArtisans={nearbyArtisans} userCoords={userCoords} />
+          <EmergencyRadarMap 
+            nearbyArtisans={nearbyArtisans} 
+            userCoords={userCoords} 
+            selectedTrade={selectedTrade}
+            areaName={userLocation}
+          />
         )}
 
         {bookingNotice && (

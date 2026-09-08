@@ -69,8 +69,7 @@ export function WorkerJobDetailView({
   const basePrice = Number(booking.basePrice || 250);
   const extraAmount = Number(booking.extraAmount || 0);
   const emergencySurcharge = isEmergency ? 100 : 0;
-  const platformFee = 10;
-  const totalTariff = basePrice + extraAmount + emergencySurcharge + platformFee;
+  const totalTariff = basePrice + extraAmount + emergencySurcharge;
   const artisanShare = Math.round((basePrice + extraAmount + emergencySurcharge) * 0.85);
 
   const address = booking.customerAddress || booking.address || 'Address on file';
@@ -202,17 +201,19 @@ export function WorkerJobDetailView({
                 </div>
               )}
 
-              {extraAmount > 0 && (
+              {Array.isArray(booking.extraCharges) && booking.extraCharges.length > 0 ? (
+                booking.extraCharges.map((chg, idx) => (
+                  <div key={chg.id || idx} className="flex justify-between text-indigo-700">
+                    <span>Mid-Work Extra: {chg.reason || `Charge #${idx + 1}`}</span>
+                    <span className="flex flow:row font-bold font-outfit text-indigo-900">+₹{Number(chg.amount || 0).toFixed(2)}</span>
+                  </div>
+                ))
+              ) : extraAmount > 0 ? (
                 <div className="flex justify-between text-indigo-700">
                   <span>Mid-Work Extra Charges ({booking.extraChargeReason || 'Extra Labor/Parts'})</span>
                   <span className="font-bold font-outfit text-indigo-900">+₹{extraAmount.toFixed(2)}</span>
                 </div>
-              )}
-
-              <div className="flex justify-between text-slate-400 text-[11px] pt-1 border-t border-slate-200">
-                <span>Platform Maintenance & GPS Server Cap (10%)</span>
-                <span>₹{platformFee.toFixed(2)}</span>
-              </div>
+              ) : null}
 
               <div className="flex justify-between items-center text-sm font-bold text-slate-900 pt-2 border-t border-slate-200 font-outfit">
                 <span>Total Customer Billing</span>
@@ -320,17 +321,20 @@ export function WorkerJobDetailView({
 
           {/* 5. Core Actions: Start Work, Mark Completed, Reject */}
           <div className="pt-4 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-3">
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={() => onOpenRejectModal?.(booking)}
-              disabled={isSubmitting}
-              className="w-full sm:w-auto h-11 px-4 text-rose-600 hover:bg-rose-50 border-rose-200 text-xs font-semibold rounded-xl cursor-pointer"
-            >
-              <XCircle className="w-4 h-4 mr-1.5" />
-              <span>Reject Job (Reassign)</span>
-            </Button>
+            {/* Reject button is only available before clicking Start On-Site Work */}
+            {!isInProgress && !isCompleted ? (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => onOpenRejectModal?.(booking)}
+                disabled={isSubmitting}
+                className="w-full sm:w-auto h-11 px-4 text-rose-600 hover:bg-rose-50 border-rose-200 text-xs font-semibold rounded-xl cursor-pointer"
+              >
+                <XCircle className="w-4 h-4 mr-1.5" />
+                <span>Reject Job (Reassign)</span>
+              </Button>
+            ) : <div className="hidden sm:block" />}
 
             <div className="flex items-center gap-2.5 w-full sm:w-auto">
               {!isInProgress && !isCompleted && (

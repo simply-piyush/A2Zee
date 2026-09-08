@@ -89,7 +89,7 @@ export function WorkerJobMinimalCard({
           </div>
 
           <div className="flex items-center gap-2 shrink-0">
-            {onOpenRejectModal && (
+            {onOpenRejectModal && booking.status !== 'IN_PROGRESS' && booking.status !== 'COMPLETED' && (
               <Button
                 type="button"
                 variant="ghost"

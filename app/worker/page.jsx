@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { CheckCircle2, AlertCircle, Calendar as CalendarIcon, FilterX } from 'lucide-react';
 import { 
   WorkerHomeHeader,
@@ -365,26 +365,64 @@ export default function WorkerPage() {
     loadWorkerProfile();
   }, []);
 
-  // 1b. Fetch bookings from API and merge into assignedJobs
-  useEffect(() => {
-    async function loadBookings() {
-      try {
-        const res = await fetch('/api/bookings');
-        const data = await res.json();
-        if (data.success && Array.isArray(data.data) && data.data.length > 0) {
-          setAssignedJobs(prev => {
-            const existingIds = new Set(prev.map(j => j.id));
-            const newBookings = data.data.filter(b => !existingIds.has(b.id));
-            if (newBookings.length === 0) return prev;
-            return [...prev, ...newBookings];
+  // 1b. Fetch bookings from API and merge into assignedJobs with continuous live synchronization
+  const loadBookings = useCallback(async () => {
+    try {
+      const res = await fetch('/api/bookings');
+      const data = await res.json();
+      const list = data.data || data.bookings;
+      if (data.success && Array.isArray(list) && list.length > 0) {
+        setAssignedJobs(prev => {
+          const incomingMap = new Map(list.map(b => [b.id, b]));
+          const updatedExisting = prev.map(job => {
+            const incoming = incomingMap.get(job.id) || (job.bookingCode && list.find(b => b.bookingCode === job.bookingCode));
+            if (incoming) {
+              incomingMap.delete(incoming.id);
+              return { 
+                ...job, 
+                ...incoming, 
+                status: incoming.status || job.status,
+                finalPrice: Number(incoming.finalPrice || job.finalPrice || 250),
+              };
+            }
+            return job;
           });
-        }
-      } catch (e) {
-        console.warn('Could not load live bookings:', e);
+          const newOnes = Array.from(incomingMap.values());
+          return [...newOnes, ...updatedExisting];
+        });
       }
+    } catch (e) {
+      console.warn('Could not load live bookings:', e);
     }
-    loadBookings();
   }, []);
+
+  useEffect(() => {
+    loadBookings();
+    const interval = setInterval(loadBookings, 4000);
+
+    let channel;
+    if (typeof window !== 'undefined' && 'BroadcastChannel' in window) {
+      try {
+        channel = new BroadcastChannel('a2zee_booking_channel');
+        channel.onmessage = (msg) => {
+          if (msg.data?.type === 'STATUS_CHANGE' || msg.data?.type === 'NEW_BOOKING') {
+            loadBookings();
+          }
+        };
+      } catch (e) {}
+    }
+
+    const handleSync = () => loadBookings();
+    window.addEventListener('storage', handleSync);
+    window.addEventListener('a2zee-booking-status-change', handleSync);
+
+    return () => {
+      clearInterval(interval);
+      if (channel) channel.close();
+      window.removeEventListener('storage', handleSync);
+      window.removeEventListener('a2zee-booking-status-change', handleSync);
+    };
+  }, [loadBookings]);
 
   // 2. Synchronize navigation with floating navbar custom events
   useEffect(() => {
@@ -559,25 +597,85 @@ export default function WorkerPage() {
     if (!selectedJob) return;
     setIsSubmitting(true);
     try {
-      await fetch(`/api/bookings/${selectedJob.id}/extra-charges`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(chargeData),
-      }).catch(() => {});
+      // Maintain full list of individual extra charges
+      const currentCharges = Array.isArray(selectedJob.extraCharges) 
+        ? [...selectedJob.extraCharges] 
+        : ((selectedJob.extraAmount || 0) > 0 
+            ? [{ 
+                id: 'chg_init', 
+                reason: selectedJob.extraChargeReason || 'On-site adjustments', 
+                amount: Number(selectedJob.extraAmount), 
+                createdAt: new Date().toISOString() 
+              }] 
+            : []);
 
-      const updatedExtra = (selectedJob.extraAmount || 0) + Number(chargeData.extraAmount);
+      const newChargeItem = {
+        id: `chg_${Date.now()}_${Math.floor(Math.random() * 1000)}`,
+        reason: chargeData.reason || 'On-site adjustments',
+        amount: Number(chargeData.extraAmount) || 0,
+        createdAt: new Date().toISOString(),
+      };
+
+      const updatedCharges = [...currentCharges, newChargeItem];
+      const updatedExtra = updatedCharges.reduce((sum, c) => sum + Number(c.amount || 0), 0);
+      const baseNum = Number(selectedJob.basePrice || 0);
+      const emergencySurcharge = selectedJob.isEmergency ? 100 : 0;
+      const newFinalPrice = baseNum + updatedExtra + emergencySurcharge;
       
       const updatedJob = {
         ...selectedJob,
         extraAmount: updatedExtra,
+        additionalPrice: updatedExtra,
+        finalPrice: newFinalPrice,
         extraChargeReason: chargeData.reason,
+        extraCharges: updatedCharges,
       };
 
       setSelectedJob(updatedJob);
       setAssignedJobs(prev => prev.map(j => j.id === updatedJob.id ? updatedJob : j));
 
+      await fetch(`/api/bookings/${selectedJob.id}/extra-charges`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ...chargeData,
+          totalExtra: updatedExtra,
+          extraCharges: updatedCharges,
+        }),
+      }).catch(() => {});
+
+      // Sync extra charges with user localStorage bookings
+      if (typeof window !== 'undefined') {
+        try {
+          const saved = JSON.parse(localStorage.getItem('a2zee_user_bookings') || '[]');
+          const updatedList = saved.map(b => 
+            (b.id === selectedJob.id || b.bookingCode === selectedJob.id || b.bookingCode === selectedJob.bookingCode)
+              ? { 
+                  ...b, 
+                  extraAmount: updatedExtra, 
+                  additionalPrice: updatedExtra, 
+                  finalPrice: newFinalPrice,
+                  extraChargeReason: chargeData.reason,
+                  extraCharges: updatedCharges,
+                }
+              : b
+          );
+          localStorage.setItem('a2zee_user_bookings', JSON.stringify(updatedList));
+          window.dispatchEvent(new CustomEvent('a2zee-booking-status-change', {
+            detail: { 
+              bookingId: selectedJob.id, 
+              bookingCode: selectedJob.bookingCode,
+              extraAmount: updatedExtra, 
+              additionalPrice: updatedExtra,
+              finalPrice: newFinalPrice,
+              extraCharges: updatedCharges,
+            }
+          }));
+        } catch (e) {}
+      }
+
       setNoticeType('success');
-      setNotice(`Extra charges of ₹${chargeData.extraAmount} logged directly to customer bill.`);
+      setNotice(`Extra charge #${updatedCharges.length} (₹${chargeData.extraAmount}) logged directly to customer bill.`);
     } catch (err) {
       console.error('Error adding extra charges:', err);
     } finally {
@@ -586,7 +684,7 @@ export default function WorkerPage() {
   };
 
   // 8. Update Job Status Pipeline (IN_PROGRESS, COMPLETED)
-  const handleUpdateStatus = (newStatus) => {
+  const handleUpdateStatus = async (newStatus) => {
     if (!selectedJob) return;
     const nowIso = new Date().toISOString();
     const baseNum = Number(selectedJob.basePrice || 0);
@@ -606,11 +704,91 @@ export default function WorkerPage() {
     setSelectedJob(updatedJob);
     setAssignedJobs(prev => prev.map(j => j.id === updatedJob.id ? updatedJob : j));
 
+    // 1. Sync PATCH with backend API
+    try {
+      await fetch(`/api/bookings/${selectedJob.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          status: newStatus,
+          finalPrice,
+          workerPayout,
+          scheduledEndTime: updatedJob.scheduledEndTime,
+        }),
+      });
+    } catch (apiErr) {
+      console.warn('API status patch note:', apiErr);
+    }
+
+    // 2. Sync with localStorage so user tracking screen immediately catches update
+    if (typeof window !== 'undefined') {
+      try {
+        const saved = JSON.parse(localStorage.getItem('a2zee_user_bookings') || '[]');
+        const targetId = selectedJob.id;
+        const targetCode = selectedJob.bookingCode;
+        const foundIndex = saved.findIndex(b => 
+          b.id === targetId || 
+          b.bookingCode === targetId || 
+          (targetCode && (b.id === targetCode || b.bookingCode === targetCode))
+        );
+
+        let updatedList;
+        if (foundIndex >= 0) {
+          updatedList = saved.map((b, idx) => 
+            idx === foundIndex 
+              ? { 
+                  ...b, 
+                  ...updatedJob, 
+                  status: newStatus, 
+                  finalPrice, 
+                  workerPayout, 
+                  extraAmount: extraNum, 
+                  scheduledEndTime: updatedJob.scheduledEndTime 
+                }
+              : b
+          );
+        } else {
+          updatedList = [
+            {
+              ...updatedJob,
+              status: newStatus,
+              finalPrice,
+              workerPayout,
+              extraAmount: extraNum,
+              scheduledEndTime: updatedJob.scheduledEndTime,
+            },
+            ...saved,
+          ];
+        }
+        localStorage.setItem('a2zee_user_bookings', JSON.stringify(updatedList));
+
+        // Dispatch storage and custom cross-tab events
+        window.dispatchEvent(new CustomEvent('a2zee-booking-status-change', {
+          detail: { bookingId: selectedJob.id, bookingCode: selectedJob.bookingCode, status: newStatus, finalPrice }
+        }));
+
+        // Broadcast cross-tab to User and Admin portals
+        if ('BroadcastChannel' in window) {
+          const bc = new BroadcastChannel('a2zee_booking_channel');
+          bc.postMessage({
+            type: 'STATUS_CHANGE',
+            bookingId: selectedJob.id,
+            bookingCode: selectedJob.bookingCode,
+            status: newStatus,
+            finalPrice,
+          });
+          bc.close();
+        }
+      } catch (storageErr) {
+        console.warn('Storage sync error:', storageErr);
+      }
+    }
+
     setNoticeType('success');
     if (newStatus === 'IN_PROGRESS') {
       setNotice('Work marked IN PROGRESS on customer bill. Mid-work adjustments enabled.');
     } else if (newStatus === 'COMPLETED') {
-      setNotice('Job marked COMPLETED. 85% payout settled directly to your cooperative wallet!');
+      setNotice('Job marked COMPLETED. Final bill generated and 85% payout settled directly to wallet!');
     }
   };
 

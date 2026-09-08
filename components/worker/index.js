@@ -1,11 +1,5 @@
 export { WorkerHomeHeader } from './WorkerHomeHeader';
-export { WorkerHeader } from './WorkerHeader';
-export { WorkerActiveGigCard } from './WorkerActiveGigCard';
-export { WorkerIncomingGigs } from './WorkerIncomingGigs';
-export { WorkerTradeSkillsGrid } from './WorkerTradeSkillsGrid';
 export { WorkerCoopPromoBanner } from './WorkerCoopPromoBanner';
-export { WorkerSearchJobsView } from './WorkerSearchJobsView';
-export { WorkerExtraChargesModal } from './WorkerExtraChargesModal';
 export { WorkerRejectModal } from './WorkerRejectModal';
 export { WorkerWalletView } from './WorkerWalletView';
 export { WorkerScheduleView } from './WorkerScheduleView';

@@ -1,11 +1,16 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { dbStore } from '@/lib/dbStore';
+import { invalidateTags } from '@/lib/apiCache';
+
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+const isValidUUID = (str) => typeof str === 'string' && UUID_REGEX.test(str);
 
 /**
  * POST /api/bookings/[id]/mock-pay
  * Process payment settlement, mapped to schema.prisma Payment & Booking models
- * Marks Payment.paymentStatus = 'SUCCESS' and Booking.status = 'COMPLETED'
+ * Marks Payment.paymentStatus = 'SUCCESS' and Booking.status = 'COMPLETED',
+ * and updates Booking.finalPrice with the gratitude tip.
  */
 export async function POST(request, { params }) {
   try {
@@ -19,17 +24,36 @@ export async function POST(request, { params }) {
 
     const { tipGratitude = 0, razorpayPaymentId } = body;
     const generatedPaymentId = razorpayPaymentId || `pay_mock_${Date.now()}_${Math.floor(1000 + Math.random() * 9000)}`;
+    const tipNum = parseFloat(tipGratitude) || 0;
 
     try {
-      const booking = await prisma.booking.findUnique({
-        where: { id },
-        include: { payment: true, worker: true },
-      });
+      let booking = null;
+      if (isValidUUID(id)) {
+        booking = await prisma.booking.findUnique({
+          where: { id },
+          include: { payment: true, worker: true },
+        });
+      } else {
+        const cleanPrefix = id.replace(/^A2Z-/i, '').toLowerCase().trim();
+        if (/^[0-9a-f]{8}$/i.test(cleanPrefix)) {
+          const matching = await prisma.$queryRaw`
+            SELECT id FROM "Booking" WHERE id::text LIKE ${cleanPrefix + '%'} LIMIT 1
+          `;
+          if (matching && matching.length > 0) {
+            booking = await prisma.booking.findUnique({
+              where: { id: matching[0].id },
+              include: { payment: true, worker: true },
+            });
+          }
+        }
+      }
 
       if (booking) {
-        const finalPriceNum = Number(booking.finalPrice);
-        const tipNum = parseFloat(tipGratitude) || 0;
-        const totalCharged = finalPriceNum + tipNum;
+        const baseNum = Number(booking.basePrice || 0);
+        const emergencyNum = booking.isEmergency ? 100 : 0;
+        const addNum = Number(booking.additionalPrice || 0);
+        const subtotal = baseNum + emergencyNum + addNum;
+        const totalCharged = subtotal + tipNum;
 
         // 1. Update or create Payment record
         let paymentRecord = booking.payment;
@@ -53,11 +77,12 @@ export async function POST(request, { params }) {
           });
         }
 
-        // 2. Mark Booking as COMPLETED
-        await prisma.booking.update({
-          where: { id },
+        // 2. Mark Booking as COMPLETED and update finalPrice with gratitude tip
+        const updatedBooking = await prisma.booking.update({
+          where: { id: booking.id },
           data: {
             status: 'COMPLETED',
+            finalPrice: totalCharged,
           },
         });
 
@@ -66,19 +91,30 @@ export async function POST(request, { params }) {
           await prisma.worker.update({
             where: { id: booking.workerId },
             data: { totalJobs: { increment: 1 } },
-          });
+          }).catch(() => {});
         }
 
-        // 4. Calculate 85-10-5 split
-        const workerWallet85 = Math.round((finalPriceNum * 0.85 + tipNum) * 100) / 100;
-        const societyOps10 = Math.round(finalPriceNum * 0.10 * 100) / 100;
-        const welfarePool5 = Math.round(finalPriceNum * 0.05 * 100) / 100;
+        // 4. Calculate 85-10-5 split with 100% of tip to worker
+        const workerWallet85 = Math.round((subtotal * 0.85 + tipNum) * 100) / 100;
+        const societyOps10 = Math.round(subtotal * 0.10 * 100) / 100;
+        const welfarePool5 = Math.round(subtotal * 0.05 * 100) / 100;
+
+        // Sync in-memory store
+        try {
+          dbStore.processMockPayment(id, { tipGratitude: tipNum });
+          if (booking.id !== id) {
+            dbStore.processMockPayment(booking.id, { tipGratitude: tipNum });
+          }
+        } catch {}
+
+        invalidateTags('bookings', 'stats', 'workers');
 
         return NextResponse.json({
           success: true,
-          message: 'Payment settled successfully. Booking marked COMPLETED.',
+          message: 'Payment settled successfully. Booking updated with tip and marked COMPLETED.',
           data: {
-            bookingId: booking.id,
+            bookingId: updatedBooking.id,
+            finalPrice: totalCharged,
             paymentId: paymentRecord.id,
             razorpayPaymentId: paymentRecord.razorpayPaymentId,
             paymentStatus: paymentRecord.paymentStatus,
@@ -104,6 +140,8 @@ export async function POST(request, { params }) {
         error: 'Booking not found',
       }, { status: 404 });
     }
+
+    invalidateTags('bookings', 'stats', 'workers');
 
     return NextResponse.json({
       success: true,

@@ -8,9 +8,10 @@ import { getAuthSession } from '@/lib/auth';
  */
 export async function GET(request) {
   try {
+    const session = await getAuthSession(request);
     const { searchParams } = new URL(request.url);
     const statusParam = searchParams.get('status') || 'PENDING';
-    const cooperativeId = searchParams.get('cooperativeId');
+    const cooperativeId = searchParams.get('cooperativeId') || session?.cooperativeId;
 
     const where = {};
     if (statusParam !== 'ALL') {

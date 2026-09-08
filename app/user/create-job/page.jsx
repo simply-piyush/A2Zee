@@ -388,9 +388,14 @@ function CreateJobForm() {
             </div>
           )}
 
-          {/* Instant Emergency GPS Map Section */}
+          {/* Instant Emergency GPS Map Section (OpenStreetMap) */}
           {jobType === 'Instant' && (
-            <EmergencyRadarMap nearbyArtisans={nearbyArtisans} userCoords={userCoords} />
+            <EmergencyRadarMap 
+              nearbyArtisans={nearbyArtisans} 
+              userCoords={userCoords} 
+              selectedTrade={selectedTrade}
+              areaName={userLocation}
+            />
           )}
 
           {bookingNotice && (

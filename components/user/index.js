@@ -1,7 +1,6 @@
 export { UserHomeHeader } from './UserHomeHeader';
 export { SearchJobsView } from './SearchJobsView';
 export { EmergencyRadarMap } from './EmergencyRadarMap';
-export { AssignedArtisanCard } from './AssignedArtisanCard';
 export { CreateJobView } from './CreateJobView';
 export { ActiveBookingBanner } from './ActiveBookingBanner';
 export { JustBookedNotice } from './JustBookedNotice';

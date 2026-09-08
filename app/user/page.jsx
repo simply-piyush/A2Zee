@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { TRADE_CATEGORIES, getPresetDescriptions } from '@/lib/servicePresets';
 import { BookingSuccessModal } from '@/components/ui/booking-success-modal';
 import {
@@ -317,40 +317,65 @@ export default function UserAppPage() {
     loadNearby();
   }, [selectedTrade, userCoords, jobType]);
 
-  // Load My Bookings on mount (synced with both data.data and data.bookings)
-  useEffect(() => {
-    async function loadBookings() {
-      try {
-        const res = await fetch('/api/bookings?limit=10');
-        const data = await res.json();
-        const list = data.data || data.bookings || [];
-        if (data.success && Array.isArray(list) && list.length > 0) {
-          setMyBookings(list);
-          try {
-            localStorage.setItem('a2zee_user_bookings', JSON.stringify(list));
-          } catch (e) {}
-          
-          // Auto-select latest active assigned artisan if available
-          const latestActive = list.find(b => b.worker && b.status !== 'COMPLETED');
-          if (latestActive && !assignedArtisan) {
-            setAssignedArtisan({
-              ...latestActive.worker,
-              bookingId: latestActive.id,
-              bookingCode: latestActive.bookingCode,
-              serviceTitle: latestActive.serviceTitle,
-              etaMinutes: latestActive.isEmergency ? 12 : null,
-              distanceKm: 1.2,
-              status: latestActive.status,
-              scheduledTime: latestActive.scheduledTime || 'Active Now',
-            });
-          }
+  // Load My Bookings with continuous live synchronization
+  const loadBookings = useCallback(async () => {
+    try {
+      const res = await fetch('/api/bookings?limit=10');
+      const data = await res.json();
+      const list = data.data || data.bookings || [];
+      if (data.success && Array.isArray(list) && list.length > 0) {
+        setMyBookings(list);
+        try {
+          localStorage.setItem('a2zee_user_bookings', JSON.stringify(list));
+        } catch (e) {}
+        
+        // Auto-select latest active assigned artisan and keep status updated
+        const latestActive = list.find(b => b.status !== 'COMPLETED' && b.status !== 'CANCELLED');
+        if (latestActive && latestActive.worker) {
+          setAssignedArtisan({
+            ...latestActive.worker,
+            bookingId: latestActive.id,
+            bookingCode: latestActive.bookingCode,
+            serviceTitle: latestActive.serviceTitle,
+            etaMinutes: latestActive.isEmergency ? 12 : null,
+            distanceKm: 1.2,
+            status: latestActive.status,
+            scheduledTime: latestActive.scheduledTime || 'Active Now',
+          });
         }
-      } catch (err) {
-        console.warn('Could not load bookings:', err);
       }
+    } catch (err) {
+      console.warn('Could not load bookings:', err);
     }
-    loadBookings();
   }, []);
+
+  useEffect(() => {
+    loadBookings();
+    const interval = setInterval(loadBookings, 5000);
+
+    let channel;
+    if (typeof window !== 'undefined' && 'BroadcastChannel' in window) {
+      try {
+        channel = new BroadcastChannel('a2zee_booking_channel');
+        channel.onmessage = (msg) => {
+          if (msg.data?.type === 'STATUS_CHANGE' || msg.data?.type === 'NEW_BOOKING') {
+            loadBookings();
+          }
+        };
+      } catch (e) {}
+    }
+
+    const handleSync = () => loadBookings();
+    window.addEventListener('storage', handleSync);
+    window.addEventListener('a2zee-booking-status-change', handleSync);
+
+    return () => {
+      clearInterval(interval);
+      if (channel) channel.close();
+      window.removeEventListener('storage', handleSync);
+      window.removeEventListener('a2zee-booking-status-change', handleSync);
+    };
+  }, [loadBookings]);
 
   // Handle Remove Search History Item
   const handleRemoveSearch = (e, itemToRemove) => {
@@ -607,6 +632,7 @@ export default function UserAppPage() {
           setEndHour={setEndHour}
           nearbyArtisans={nearbyArtisans}
           userCoords={userCoords}
+          userLocation={userLocation}
           assignedArtisan={assignedArtisan}
           bookingNotice={bookingNotice}
           isSubmitting={isSubmitting}

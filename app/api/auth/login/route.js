@@ -202,6 +202,8 @@ export async function POST(request) {
       email: authenticatedUser.email,
       role: authenticatedUser.role,
       cooperativeId: authenticatedUser.cooperativeId || null,
+      cooperativeName: authenticatedUser.cooperativeName || null,
+      isCooperativeAdmin: Boolean(authenticatedUser.isCooperativeAdmin || authenticatedUser.cooperativeId),
     });
 
     const response = NextResponse.json({

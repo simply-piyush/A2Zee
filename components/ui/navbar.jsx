@@ -27,18 +27,29 @@ const WORKER_PORTAL_NAV_ITEMS = [
   { id: "wallet", label: "WALLET" },
 ];
 
+// Admin Portal items: Bookings, Workers, Customers, Approvals, Ledger
+const ADMIN_PORTAL_NAV_ITEMS = [
+  { id: "bookings", label: "BOOKINGS" },
+  { id: "workers", label: "WORKERS" },
+  { id: "customers", label: "CUSTOMERS" },
+  { id: "verifications", label: "APPROVALS" },
+  { id: "revenue", label: "LEDGER" },
+];
+
 export function Navbar() {
   const router = useRouter();
   const pathname = usePathname();
   
   const isUserPortal = pathname?.startsWith('/user');
   const isWorkerPortal = pathname?.startsWith('/worker');
+  const isAdminPortal = pathname?.startsWith('/admin');
 
   let navItems = LANDING_NAV_ITEMS;
   if (isUserPortal) navItems = USER_PORTAL_NAV_ITEMS;
   else if (isWorkerPortal) navItems = WORKER_PORTAL_NAV_ITEMS;
+  else if (isAdminPortal) navItems = ADMIN_PORTAL_NAV_ITEMS;
 
-  const [activeTab, setActiveTab] = useState("home");
+  const [activeTab, setActiveTab] = useState(isAdminPortal ? "bookings" : "home");
   const [userView, setUserView] = useState("home");
 
   const activeTabRef = useRef("home");
@@ -55,8 +66,30 @@ export function Navbar() {
 
   // Set default tab on route change
   useEffect(() => {
-    setActiveTab("home");
-  }, [pathname]);
+    if (isAdminPortal) {
+      setActiveTab("bookings");
+    } else {
+      setActiveTab("home");
+    }
+  }, [pathname, isAdminPortal]);
+
+  // Listen to tab changes dispatched by admin portal
+  useEffect(() => {
+    if (!isAdminPortal) return;
+
+    const handleAdminTabChange = (e) => {
+      const targetId = e.detail;
+      if (targetId && ADMIN_PORTAL_NAV_ITEMS.some(n => n.id === targetId)) {
+        setActiveTab(targetId);
+      }
+    };
+
+    window.addEventListener('a2zee-admin-tab-change', handleAdminTabChange);
+
+    return () => {
+      window.removeEventListener('a2zee-admin-tab-change', handleAdminTabChange);
+    };
+  }, [isAdminPortal]);
 
 
   // Listen to tab changes and view changes dispatched by user portal
@@ -219,25 +252,31 @@ export function Navbar() {
     setActiveTab(id);
     movePill(id);
 
-    // 1. Handle Worker Portal In-App Tab Switch
+    // 1. Handle Admin Portal In-App Tab Switch
+    if (isAdminPortal) {
+      window.dispatchEvent(new CustomEvent("a2zee-admin-tab", { detail: id }));
+      return;
+    }
+
+    // 2. Handle Worker Portal In-App Tab Switch
     if (isWorkerPortal) {
       window.dispatchEvent(new CustomEvent("a2zee-worker-tab", { detail: id }));
       return;
     }
 
-    // 2. Handle User Portal In-App Tab Switch
+    // 3. Handle User Portal In-App Tab Switch
     if (isUserPortal) {
       window.dispatchEvent(new CustomEvent("a2zee-user-tab", { detail: id }));
       return;
     }
 
-    // 3. Handle External Route (e.g. LOGIN -> /auth)
+    // 4. Handle External Route (e.g. LOGIN -> /auth)
     if (href) {
       router.push(href);
       return;
     }
 
-    // 4. Handle Landing Page Navigation
+    // 5. Handle Landing Page Navigation
     if (pathname !== "/") {
       router.push(id === "home" ? "/" : `/#${id}`);
       return;
@@ -269,9 +308,8 @@ export function Navbar() {
     }, 1800);
   };
 
-  // Hide floating navbar on admin/auth portals, or when in create job page/view
+  // Hide floating navbar on auth portal, or when in create job page/view
   if (
-    pathname?.startsWith('/admin') ||
     pathname === '/auth' ||
     pathname === '/user/create-job' ||
     (isUserPortal && userView === 'create')
@@ -280,30 +318,30 @@ export function Navbar() {
   }
 
   return (
-    <header className="fixed bottom-5 left-1/2 -translate-x-1/2 z-50 select-none max-w-[96vw] pointer-events-auto">
+    <header className="fixed bottom-[max(0.75rem,env(safe-area-inset-bottom))] sm:bottom-5 left-1/2 -translate-x-1/2 z-50 select-none max-w-[98vw] pointer-events-auto">
       <nav
         ref={containerRef}
-        className="relative inline-flex items-center bg-white border-2 border-black rounded-full p-1.5 shadow-[0_12px_36px_rgba(0,0,0,0.18)]"
+        className="relative inline-flex items-center bg-white border-2 border-black rounded-full p-1 sm:p-1.5 shadow-[0_12px_36px_rgba(0,0,0,0.18)] max-w-full overflow-x-auto scrollbar-none"
       >
         {/* Hardware-Accelerated GSAP Sliding Active Navy Pill */}
         <span
           ref={pillRef}
           aria-hidden="true"
-          className="absolute top-1.5 bottom-1.5 left-0 bg-[#1F4072] text-white rounded-full pointer-events-none opacity-0 shadow-sm"
+          className="absolute top-1 sm:top-1.5 bottom-1 sm:bottom-1.5 left-0 bg-[#1F4072] text-white rounded-full pointer-events-none opacity-0 shadow-sm"
         />
 
-        <ul className="relative flex items-center list-none m-0 p-0 font-secondary font-semibold text-xs md:text-sm tracking-wide">
+        <ul className="relative flex items-center list-none m-0 p-0 font-secondary font-semibold text-[10px] sm:text-xs md:text-sm tracking-tight sm:tracking-wide shrink-0">
           {navItems.map((item) => {
             const isActive = activeTab === item.id;
 
             return (
-              <li key={item.id} className="relative">
+              <li key={item.id} className="relative shrink-0">
                 <button
                   ref={(el) => {
                     if (el) navRefs.current[item.id] = el;
                   }}
                   onClick={() => handleNavClick(item.id, item.href)}
-                  className={`relative z-10 px-3.5 sm:px-5 py-2 rounded-full font-secondary font-semibold uppercase tracking-wider transition-colors duration-300 cursor-pointer flex items-center gap-1.5 ${
+                  className={`relative z-10 px-2.5 sm:px-4 md:px-5 py-1.5 sm:py-2 rounded-full font-secondary font-semibold uppercase tracking-tight sm:tracking-wider transition-colors duration-300 cursor-pointer flex items-center gap-1 whitespace-nowrap ${
                     isActive
                       ? "text-white"
                       : "text-black hover:text-black/60"

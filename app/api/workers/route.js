@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { getAuthSession } from '@/lib/auth';
 
 /**
  * GET /api/workers
@@ -8,12 +9,15 @@ import { prisma } from '@/lib/prisma';
 export async function GET(request) {
   try {
     const { searchParams } = new URL(request.url);
+    const session = await getAuthSession(request);
     const skillName = searchParams.get('skill');
     const status = searchParams.get('status');
+    const cooperativeId = searchParams.get('cooperativeId') || session?.cooperativeId;
 
     const workers = await prisma.worker.findMany({
       where: {
         ...(status && { availabilityStatus: status }),
+        ...(cooperativeId && { cooperativeId }),
         ...(skillName && {
           skills: {
             some: {

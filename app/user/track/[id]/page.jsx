@@ -14,7 +14,8 @@ import {
   Check,
   Receipt,
   Heart,
-  Sparkles
+  Sparkles,
+  Lock
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -113,10 +114,49 @@ export default function TrackExpertPage() {
 
   useEffect(() => {
     fetchLiveBooking();
-    // Live polling every 6 seconds to synchronize service progress with the DB
-    const interval = setInterval(fetchLiveBooking, 6000);
-    return () => clearInterval(interval);
-  }, [fetchLiveBooking]);
+    // High-frequency 3s polling for immediate worker sync
+    const interval = setInterval(fetchLiveBooking, 3000);
+
+    // Cross-tab and local event listeners for instant zero-latency updates
+    const handleStorageChange = (e) => {
+      if (e.key === 'a2zee_user_bookings' || !e.key) {
+        fetchLiveBooking();
+      }
+    };
+    const handleCustomStatusChange = (e) => {
+      const bId = e.detail?.bookingId;
+      const bCode = e.detail?.bookingCode;
+      if (!bId || bId === decodedId || bCode === decodedId || (decodedId && (bId.includes(decodedId) || decodedId.includes(bId)))) {
+        fetchLiveBooking();
+      }
+    };
+
+    let channel;
+    if (typeof window !== 'undefined' && 'BroadcastChannel' in window) {
+      try {
+        channel = new BroadcastChannel('a2zee_booking_channel');
+        channel.onmessage = (msg) => {
+          if (msg.data?.type === 'STATUS_CHANGE') {
+            const bId = msg.data.bookingId;
+            const bCode = msg.data.bookingCode;
+            if (!bId || bId === decodedId || bCode === decodedId || (decodedId && (bId.includes(decodedId) || decodedId.includes(bId)))) {
+              fetchLiveBooking();
+            }
+          }
+        };
+      } catch (e) {}
+    }
+
+    window.addEventListener('storage', handleStorageChange);
+    window.addEventListener('a2zee-booking-status-change', handleCustomStatusChange);
+
+    return () => {
+      clearInterval(interval);
+      if (channel) channel.close();
+      window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('a2zee-booking-status-change', handleCustomStatusChange);
+    };
+  }, [fetchLiveBooking, decodedId]);
 
   // 2. Pricing Calculations (100% unified with DB & bill)
   const isEmergency = Boolean(
@@ -125,17 +165,36 @@ export default function TrackExpertPage() {
     booking?.type === 'Emergency'
   );
 
-  const basePrice = Number(booking?.basePrice || 250);
-  const emergencyFee = isEmergency ? 100 : 0;
-  const extraPrice = Number(booking?.additionalPrice || booking?.extraAmount || 0);
-  const subtotal = Number(booking?.finalPrice) || (basePrice + emergencyFee + extraPrice);
-  const totalPayable = subtotal + selectedTip;
-
   const isPaid = Boolean(
     booking?.paymentStatus === 'PAID' || 
     booking?.paymentStatus === 'SUCCESS' ||
     booking?.payment?.paymentStatus === 'SUCCESS'
   );
+
+  const basePrice = Number(booking?.basePrice || 250);
+  const emergencyFee = isEmergency ? 100 : 0;
+  const extraPrice = Number(booking?.additionalPrice || booking?.extraAmount || 0);
+
+  const extraChargesList = Array.isArray(booking?.extraCharges) && booking.extraCharges.length > 0
+    ? booking.extraCharges
+    : (extraPrice > 0 
+        ? [{ 
+            id: 'chg_single', 
+            reason: booking?.extraChargeReason || booking?.additionalDescription || 'Mid-Work Adjustments / Materials', 
+            amount: extraPrice 
+          }] 
+        : []);
+
+  const totalExtraAmount = extraChargesList.length > 0 
+    ? extraChargesList.reduce((sum, c) => sum + Number(c.amount || 0), 0)
+    : extraPrice;
+
+  const currentTip = isPaid 
+    ? Number(booking?.tipGratitude || booking?.tip || (Number(booking?.finalPrice || 0) > (basePrice + emergencyFee + totalExtraAmount) ? Number(booking.finalPrice) - (basePrice + emergencyFee + totalExtraAmount) : 0))
+    : selectedTip;
+
+  const subtotal = basePrice + emergencyFee + totalExtraAmount;
+  const totalPayable = isPaid ? (Number(booking?.finalPrice) || (subtotal + currentTip)) : (subtotal + selectedTip);
 
   // 3. Advance / update service progress directly in the DB
   const handleUpdateStatusInDb = async (newStatus) => {
@@ -189,12 +248,21 @@ export default function TrackExpertPage() {
       const generatedTxn = data?.data?.razorpayPaymentId || data?.data?.transactionId || `TXN_${Date.now()}`;
       setMockTxnId(generatedTxn);
 
+      const paidTotal = totalPayable;
       const updatedBooking = {
         ...booking,
         paymentStatus: 'PAID',
         status: 'COMPLETED',
         mockTxnId: generatedTxn,
-        paidAmount: totalPayable,
+        paidAmount: paidTotal,
+        finalPrice: paidTotal,
+        tipGratitude: selectedTip,
+        payment: {
+          ...(booking.payment || {}),
+          amount: paidTotal,
+          paymentStatus: 'SUCCESS',
+          razorpayPaymentId: generatedTxn,
+        },
       };
       setBooking(updatedBooking);
       setActionNotice('Payment settled successfully! Your booking is now fully completed.');
@@ -205,17 +273,44 @@ export default function TrackExpertPage() {
           const saved = JSON.parse(localStorage.getItem('a2zee_user_bookings') || '[]');
           const updatedList = saved.map(b => 
             (b.id === booking.id || b.bookingCode === booking.id) 
-              ? { ...b, paymentStatus: 'PAID', status: 'COMPLETED', mockTxnId: generatedTxn } 
+              ? { 
+                  ...b, 
+                  paymentStatus: 'PAID', 
+                  status: 'COMPLETED', 
+                  mockTxnId: generatedTxn,
+                  paidAmount: paidTotal,
+                  finalPrice: paidTotal,
+                  tipGratitude: selectedTip,
+                } 
               : b
           );
           localStorage.setItem('a2zee_user_bookings', JSON.stringify(updatedList));
+          window.dispatchEvent(new CustomEvent('a2zee-booking-status-change', {
+            detail: {
+              bookingId: booking.id,
+              bookingCode: booking.bookingCode,
+              status: 'COMPLETED',
+              paymentStatus: 'PAID',
+              finalPrice: paidTotal,
+              tipGratitude: selectedTip,
+            }
+          }));
         } catch (e) {}
       }
     } catch (err) {
       console.error('Payment error:', err);
       const fallbackTxn = `TXN_MOCK_${Math.floor(10000000 + Math.random() * 90000000)}`;
       setMockTxnId(fallbackTxn);
-      setBooking(prev => ({ ...prev, paymentStatus: 'PAID', status: 'COMPLETED', mockTxnId: fallbackTxn }));
+      const paidTotal = totalPayable;
+      setBooking(prev => ({ 
+        ...prev, 
+        paymentStatus: 'PAID', 
+        status: 'COMPLETED', 
+        mockTxnId: fallbackTxn,
+        finalPrice: paidTotal,
+        paidAmount: paidTotal,
+        tipGratitude: selectedTip,
+      }));
     } finally {
       setIsPaying(false);
     }
@@ -232,22 +327,28 @@ export default function TrackExpertPage() {
 
   const worker = booking.worker;
   const rawStatus = (booking.status || '').toUpperCase();
-  let statusLabel = 'Pending';
-  let statusBadgeVariant = 'warning';
+  
+  // 5. 5-Step Service Progress Mapping: Booked -> Assigned -> Pending -> In Progress -> Done
+  let statusLabel = 'Booked';
+  let statusBadgeVariant = 'secondary';
   let timelineStep = 1;
 
-  if (rawStatus === 'COMPLETED' || rawStatus === 'DONE') {
+  const isCompleted = rawStatus === 'COMPLETED' || rawStatus === 'DONE' || isPaid;
+  const isInProgress = rawStatus === 'IN_PROGRESS';
+
+  if (isCompleted) {
     statusLabel = 'Done';
     statusBadgeVariant = 'success';
     timelineStep = 5;
-  } else if (rawStatus === 'IN_PROGRESS') {
+  } else if (isInProgress) {
     statusLabel = 'In Progress';
     statusBadgeVariant = 'primary';
     timelineStep = 4;
-  } else if (rawStatus === 'ACCEPTED' || rawStatus === 'ASSIGNED') {
-    statusLabel = 'Assigned';
-    statusBadgeVariant = 'primary';
-    timelineStep = 2;
+  } else if (rawStatus === 'PENDING' || rawStatus === 'ACCEPTED' || rawStatus === 'ASSIGNED' || rawStatus === 'CONFIRMED') {
+    // Artisan matched and allocated, pending on-site arrival and start
+    statusLabel = 'Pending Start';
+    statusBadgeVariant = 'warning';
+    timelineStep = 3;
   }
 
   const jobDesc = booking.customJobDescription || 
@@ -256,12 +357,13 @@ export default function TrackExpertPage() {
     booking.title || 
     'General Household Repair Service';
 
+  // 5 exact steps requested by user
   const steps = [
-    { title: 'Booked', desc: 'Confirmed', statusKey: 'PENDING' },
-    { title: 'Assigned', desc: 'Matched', statusKey: 'ACCEPTED' },
-    { title: 'En Route', desc: 'On way', statusKey: 'IN_PROGRESS' },
-    { title: 'In Progress', desc: 'Ongoing', statusKey: 'IN_PROGRESS' },
-    { title: 'Done', desc: 'Completed', statusKey: 'COMPLETED' },
+    { title: 'Booked', desc: 'Order Placed', stepNum: 1 },
+    { title: 'Assigned', desc: 'Artisan Matched', stepNum: 2 },
+    { title: 'Pending', desc: 'Awaiting Start', stepNum: 3 },
+    { title: 'In Progress', desc: 'Work Underway', stepNum: 4 },
+    { title: 'Done', desc: 'Completed & Billed', stepNum: 5 },
   ];
 
   const tipOptions = [0, 10, 20, 50];
@@ -274,7 +376,6 @@ export default function TrackExpertPage() {
         title="LIVE ARTISAN TRACKING"
         subtitle={`Ref: #${booking.bookingCode || booking.id}`}
         onBack={() => router.push('/user')}
-        
       />
 
       <div className="max-w-2xl mx-auto w-full px-4 sm:px-6 pt-6 space-y-6">
@@ -311,22 +412,24 @@ export default function TrackExpertPage() {
               variant={statusBadgeVariant}
               className="text-xs font-semibold px-3 py-1 flex items-center gap-1.5"
             >
-              {statusLabel === 'In Progress' && (
+              {isInProgress && (
                 <span className="w-1.5 h-1.5 rounded-full bg-[#1F4072] animate-ping" />
               )}
               {statusLabel}
             </Badge>
 
             <Badge 
-              variant={isPaid ? 'success' : 'warning'}
+              variant={isPaid ? 'success' : isCompleted ? 'warning' : 'secondary'}
               className="text-xs font-semibold px-3 py-1"
             >
-              {isPaid ? 'Paid' : 'Unpaid'}
+              {isPaid ? 'Paid' : isCompleted ? 'Bill Ready' : 'Payment Locked'}
             </Badge>
           </div>
 
-          <div className="flex flex-col justify-center items-center ">
-            <span className="text-[10px] text-gray-400 block uppercase font-medium">Payable Amount</span>
+          <div className="flex flex-col justify-center items-center">
+            <span className="text-[10px] text-gray-400 block uppercase font-medium">
+              {isCompleted ? 'Total Payable' : 'Estimated Tariff'}
+            </span>
             <span className="text-lg font-bold text-[#1F4072]">₹{totalPayable.toFixed(2)}</span>
           </div>
         </div>
@@ -336,17 +439,17 @@ export default function TrackExpertPage() {
           <div className="flex items-center justify-between">
             <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
               <span>Service Progress</span>
-              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+              <span className={`w-2 h-2 rounded-full ${isInProgress ? 'bg-[#1F4072] animate-ping' : isCompleted ? 'bg-emerald-500' : 'bg-amber-500 animate-pulse'}`} />
             </h3>
             
-            {/* Simulation Status Controls */}
+            {/* Quick Status Controls */}
             <div className="flex items-center gap-1.5">
               <Button
                 variant="outline"
                 size="sm"
                 disabled={isUpdatingStatus}
                 onClick={() => handleUpdateStatusInDb('IN_PROGRESS')}
-                className="text-[11px] h-7 px-2 rounded-lg cursor-pointer"
+                className={`text-[11px] h-7 px-2 rounded-lg cursor-pointer ${isInProgress ? 'bg-blue-50 border-[#1F4072] font-bold text-[#1F4072]' : ''}`}
               >
                 In Progress
               </Button>
@@ -355,16 +458,17 @@ export default function TrackExpertPage() {
                 size="sm"
                 disabled={isUpdatingStatus}
                 onClick={() => handleUpdateStatusInDb('COMPLETED')}
-                className="text-[11px] h-7 px-2 rounded-lg text-emerald-700 border-emerald-200 hover:bg-emerald-50 cursor-pointer"
+                className={`text-[11px] h-7 px-2 rounded-lg cursor-pointer ${isCompleted ? 'bg-emerald-50 border-emerald-500 font-bold text-emerald-700' : 'text-emerald-700 border-emerald-200 hover:bg-emerald-50'}`}
               >
                 Completed
               </Button>
             </div>
           </div>
 
+          {/* 5-Step Grid: Booked -> Assigned -> Pending -> In Progress -> Done */}
           <div className="grid grid-cols-5 gap-2 relative pt-1">
-            {steps.map((step, idx) => {
-              const stepNum = idx + 1;
+            {steps.map((step) => {
+              const stepNum = step.stepNum;
               const isPassed = stepNum <= timelineStep;
               const isCurrent = stepNum === timelineStep;
 
@@ -372,14 +476,16 @@ export default function TrackExpertPage() {
                 <div key={step.title} className="text-center space-y-1.5">
                   <div 
                     className={`w-8 h-8 sm:w-10 sm:h-10 mx-auto rounded-full flex items-center justify-center text-xs sm:text-sm font-bold transition-all ${
-                      isCurrent
+                      isCompleted && stepNum === 5
+                        ? 'bg-emerald-600 text-white ring-4 ring-emerald-600/20 shadow-md'
+                        : isCurrent
                         ? 'bg-[#1F4072] text-white ring-4 ring-[#1F4072]/20 shadow-md'
                         : isPassed
                         ? 'bg-emerald-500 text-white'
                         : 'bg-slate-100 text-slate-400 border border-slate-200'
                     }`}
                   >
-                    {isPassed && !isCurrent ? (
+                    {(isPassed && !isCurrent) || (isCompleted && stepNum === 5) ? (
                       <Check className="w-4 h-4" />
                     ) : (
                       stepNum
@@ -415,7 +521,6 @@ export default function TrackExpertPage() {
             <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider">
               Job Description & Scope
             </h3>
-            
           </div>
 
           <p className="text-sm text-slate-700 leading-relaxed bg-slate-50 p-3.5 rounded-2xl border border-slate-100 font-normal">
@@ -441,7 +546,7 @@ export default function TrackExpertPage() {
           </div>
         </div>
 
-        {/* Embedded Official Invoice & Settlement Bill (No separate page needed) */}
+        {/* Official Invoice & Settlement Bill - Gated to Job Completion */}
         <div className="bg-white rounded-3xl border border-gray-200/90 shadow-xs p-6 space-y-5">
           
           {/* Bill Header */}
@@ -451,15 +556,52 @@ export default function TrackExpertPage() {
                 <Receipt className="w-5 h-5" />
               </div>
               <div>
-                <h3 className="font-bold text-base text-slate-900">Official Invoice & Settlement</h3>
+                <h3 className="font-bold text-base text-slate-900">
+                  {isCompleted ? 'Official Final Invoice' : 'Estimated Billing Statement'}
+                </h3>
                 <p className="text-xs text-slate-500">Booking Code: #{booking.bookingCode || booking.id}</p>
               </div>
             </div>
 
-            <Badge variant={isPaid ? 'success' : 'warning'} className="text-xs px-3 py-1 font-semibold">
-              {isPaid ? 'PAID' : 'PENDING'}
+            <Badge 
+              variant={isPaid ? 'success' : isCompleted ? 'warning' : 'secondary'} 
+              className="text-xs px-3 py-1 font-semibold"
+            >
+              {isPaid ? 'PAID' : isCompleted ? 'FINAL BILL READY' : 'PAYMENT LOCKED'}
             </Badge>
           </div>
+
+          {/* Gating Notice when Job is NOT yet Completed */}
+          {!isCompleted && !isPaid && (
+            <div className="p-4 rounded-2xl bg-amber-50/80 border border-amber-200 text-amber-900 space-y-2">
+              <div className="flex items-start gap-2.5">
+                <Clock className="w-4 h-4 text-amber-600 shrink-0 mt-0.5 animate-pulse" />
+                <div className="space-y-1">
+                  <p className="font-bold text-xs sm:text-sm font-outfit text-amber-900">
+                    Payment Locked — On-Site Work In Progress
+                  </p>
+                  <p className="text-[11px] sm:text-xs text-amber-800 leading-relaxed font-secondary">
+                    In accordance with cooperative policy, you can only pay after the artisan completes the job and generates the final bill (including any on-site parts or adjustments).
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Completed Notification Banner when Bill is Unlocked */}
+          {isCompleted && !isPaid && (
+            <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-900 space-y-1 animate-in fade-in duration-150">
+              <div className="flex items-center gap-2">
+                <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                <p className="font-bold text-xs sm:text-sm font-outfit text-emerald-950">
+                  Job Completed! Official Bill Generated
+                </p>
+              </div>
+              <p className="text-[11px] sm:text-xs text-emerald-800 leading-relaxed font-secondary pl-6">
+                The artisan has finished work on-site and submitted the final verified bill. Please review your line items and proceed with payment.
+              </p>
+            </div>
+          )}
 
           {/* Itemized Line Items */}
           <div className="space-y-3 text-sm">
@@ -475,26 +617,35 @@ export default function TrackExpertPage() {
               </div>
             )}
 
-            {extraPrice > 0 && (
-              <div className="flex justify-between items-center text-slate-600">
-                <div className="flex items-center gap-1.5">
-                  <span>Additional Work / Materials</span>
-                  <span className="text-[10px] bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded font-medium">Overrun</span>
+            {extraChargesList.length > 0 && (
+              extraChargesList.map((chg, idx) => (
+                <div key={chg.id || idx} className="flex justify-between items-center text-indigo-700 bg-indigo-50/50 p-2.5 rounded-xl border border-indigo-100/60">
+                  <div className="flex items-center gap-1.5">
+                    <span className="font-medium text-slate-800">
+                      {chg.reason || `Mid-Work Extra #${idx + 1}`}
+                    </span>
+                    <span className="text-[10px] bg-indigo-100 text-indigo-800 px-1.5 py-0.5 rounded font-bold">Approved</span>
+                  </div>
+                  <span className="font-bold text-indigo-900">+₹{Number(chg.amount || 0).toFixed(2)}</span>
                 </div>
-                <span className="font-semibold text-slate-900">+₹{extraPrice.toFixed(2)}</span>
-              </div>
+              ))
             )}
 
-            {selectedTip > 0 && (
-              <div className="flex justify-between items-center text-emerald-600">
-                <span>Gratitude Tip (100% to artisan)</span>
-                <span className="font-semibold">+₹{selectedTip.toFixed(2)}</span>
+            {currentTip > 0 && (
+              <div className="flex justify-between items-center text-emerald-600 bg-emerald-50/50 p-2.5 rounded-xl border border-emerald-100/60">
+                <div className="flex items-center gap-1.5">
+                  <span className="font-medium text-emerald-800">Gratitude Tip (100% to artisan)</span>
+                  <span className="text-[10px] bg-emerald-100 text-emerald-800 px-1.5 py-0.5 rounded font-bold">Gratitude</span>
+                </div>
+                <span className="font-bold text-emerald-700">+₹{currentTip.toFixed(2)}</span>
               </div>
             )}
 
             <div className="pt-3 border-t border-slate-200 flex justify-between items-center text-base">
               <div>
-                <span className="font-bold text-slate-900 block">Total Payable</span>
+                <span className="font-bold text-slate-900 block">
+                  {isCompleted ? 'Total Payable' : 'Estimated Amount'}
+                </span>
                 <span className="text-[11px] text-slate-400">Taxes & Cooperative Fee Included</span>
               </div>
               <span className="font-extrabold text-2xl text-[#1F4072]">
@@ -503,9 +654,9 @@ export default function TrackExpertPage() {
             </div>
           </div>
 
-          {/* Gratitude Corner (Tip Selector) when unpaid */}
-          {!isPaid && (
-            <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/80 space-y-2.5">
+          {/* Gratitude Corner (Tip Selector) - ONLY Available when Job is Completed and Unpaid */}
+          {isCompleted && !isPaid && (
+            <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/80 space-y-2.5 animate-in fade-in duration-150">
               <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-700">
                 <Heart className="w-3.5 h-3.5 text-rose-500 fill-rose-500" />
                 <span>Gratitude Corner • Tip your artisan (optional)</span>
@@ -529,18 +680,8 @@ export default function TrackExpertPage() {
             </div>
           )}
 
-          {/* Payment Action or Success Confirmation */}
-          {!isPaid ? (
-            <Button
-              size="lg"
-              disabled={isPaying}
-              onClick={handleRegisterMockPayment}
-              className="w-full shadow-md bg-[#1F4072] hover:bg-[#18345c] text-white rounded-2xl font-bold text-sm py-6 cursor-pointer"
-            >
-              <CreditCard className="w-4 h-4 mr-2" />
-              <span>{isPaying ? 'Settling Payment...' : `Proceed to Pay • ₹${totalPayable.toFixed(2)}`}</span>
-            </Button>
-          ) : (
+          {/* Payment Action: Unlocked ONLY upon completion */}
+          {isPaid ? (
             <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-900 space-y-2">
               <div className="flex items-center gap-2">
                 <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
@@ -553,6 +694,30 @@ export default function TrackExpertPage() {
               </div>
               <p className="text-[11px] text-emerald-800 pt-1">
                 Receipt recorded in your orders history. Thank you for supporting cooperative gig artisans!
+              </p>
+            </div>
+          ) : isCompleted ? (
+            <Button
+              size="lg"
+              disabled={isPaying}
+              onClick={handleRegisterMockPayment}
+              className="w-full shadow-md bg-[#1F4072] hover:bg-[#18345c] text-white rounded-2xl font-bold text-sm py-6 cursor-pointer animate-in zoom-in-95 duration-150"
+            >
+              <CreditCard className="w-4 h-4 mr-2" />
+              <span>{isPaying ? 'Settling Payment...' : `Proceed to Pay • ₹${totalPayable.toFixed(2)}`}</span>
+            </Button>
+          ) : (
+            <div className="space-y-2">
+              <Button
+                size="lg"
+                disabled={true}
+                className="w-full bg-slate-100 text-slate-400 border border-slate-200 rounded-2xl font-semibold text-sm py-6 cursor-not-allowed shadow-none"
+              >
+                <Lock className="w-4 h-4 mr-2" />
+                <span>Payment Locked • Awaiting Job Completion</span>
+              </Button>
+              <p className="text-[10px] text-center text-slate-400 font-secondary">
+                The &quot;Proceed to Pay&quot; button will activate automatically as soon as the artisan marks the job completed.
               </p>
             </div>
           )}
@@ -576,4 +741,3 @@ export default function TrackExpertPage() {
     </div>
   );
 }
-

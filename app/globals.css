@@ -198,3 +198,28 @@ body::-webkit-scrollbar {
       var(--c1);
   background-size: var(--s) var(--s);
 }
+
+/* Progressive Web App (PWA) Mobile Inset & Touch Optimizations */
+:root {
+  --sat: env(safe-area-inset-top, 0px);
+  --sar: env(safe-area-inset-right, 0px);
+  --sab: env(safe-area-inset-bottom, 0px);
+  --sal: env(safe-area-inset-left, 0px);
+}
+
+.pt-safe {
+  padding-top: env(safe-area-inset-top, 0px);
+}
+
+.pb-safe {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+/* Fullscreen & Standalone PWA mobile UX */
+@media all and (display-mode: fullscreen), all and (display-mode: standalone) {
+  body {
+    -webkit-tap-highlight-color: transparent;
+    overscroll-behavior-y: none;
+  }
+}
+
