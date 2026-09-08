@@ -221,18 +221,16 @@ export function EmergencyRadarMap({
       <div className="flex items-center justify-between gap-2">
         <div className="min-w-0">
           <div className="flex items-center gap-1.5">
-            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+
             <span className="text-xs sm:text-sm font-bold text-slate-900 tracking-tight block">
-              Emergency Radar Active (OpenStreetMap)
+              Emergency Radar Active
             </span>
           </div>
           <span className="text-[11px] text-slate-500 block truncate">
             {selectedTrade ? `Showing all ${selectedTrade} artisans within 20km radius` : 'All nearby verified online artisans in view'}
           </span>
         </div>
-        <span className="flex-shrink-0 text-[11px] sm:text-xs font-semibold text-[#1F4072] bg-blue-50/80 px-2.5 py-1 rounded-full border border-blue-100/80">
-          {onlineCount} online karigars (20km)
-        </span>
+        
       </div>
 
       {/* Interactive OpenStreetMap Container */}

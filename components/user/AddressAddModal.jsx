@@ -349,10 +349,8 @@ export function AddressAddModal({
               <span>{isLocating ? 'Locating...' : 'Current GPS'}</span>
             </Button>
 
-            {/* Micro Coordinates Pill */}
-            <div className="absolute top-2.5 left-2.5 z-[400] bg-[#1F4072]/90 backdrop-blur-xs text-white text-[10px] px-2.5 py-1 rounded-full font-mono font-medium shadow-xs">
-              GPS: {parseFloat(latitude || '0').toFixed(4)}°, {parseFloat(longitude || '0').toFixed(4)}°
-            </div>
+           
+            
           </div>
 
           {/* 1. Label Tag (schema: label String @default("Home") @db.VarChar(50)) */}
