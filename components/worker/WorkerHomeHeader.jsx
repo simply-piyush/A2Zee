@@ -36,7 +36,7 @@ export function WorkerHomeHeader({
     <header className="rounded-b-[36px] md:rounded-b-[48px] px-5 sm:px-6 pt-12 sm:pt-14 pb-8 text-white relative">
       <HeaderBackground className="rounded-b-[36px] md:rounded-b-[48px]" />
 
-      <div className="max-w-md md:max-w-4xl lg:max-w-5xl mx-auto w-full space-y-5 relative z-10">
+      <div className="max-w-md md:max-w-4xl lg:max-w-5xl mx-auto w-full space-y-4 relative z-10">
         
         {/* Top Row: Cooperative Cluster Selector, Online/Offline Toggle Switch & Worker Avatar */}
         <div className="flex items-center justify-between gap-3">

@@ -24,8 +24,12 @@ export function WorkerJobMinimalCard({
 
   const isEmergency = Boolean(booking.isEmergency);
   const basePrice = Number(booking.basePrice || 250);
-  const extraAmount = Number(booking.extraAmount || 0);
-  const artisanShare = Math.round((basePrice + extraAmount) * 0.85);
+  const extraAmount = Number(booking.extraAmount || booking.additionalPrice || 0);
+  const emergencySurcharge = isEmergency ? 100 : 0;
+  const totalTariff = Number(booking.finalPrice || (basePrice + extraAmount + emergencySurcharge));
+  const artisanShare = booking.workerPayout !== undefined && !isNaN(Number(booking.workerPayout))
+    ? Math.round(Number(booking.workerPayout))
+    : Math.round(totalTariff * 0.85);
 
   const address = booking.customerAddress || booking.address || 'Address on file';
   const serviceTitle = booking.serviceTitle || booking.service?.name || 'Assigned Household Service';

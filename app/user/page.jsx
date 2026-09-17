@@ -85,10 +85,32 @@ export default function UserAppPage() {
   // Location & User info
   const [userLocation, setUserLocation] = useState('Flat 402, Green Meadows, Madhyamgram, Kolkata');
   const [userCoords, setUserCoords] = useState({ lat: 22.6950, lng: 88.4550 });
+  const [userId, setUserId] = useState(null);
   const [userName, setUserName] = useState('Priyush Customer');
   const [userPhone, setUserPhone] = useState('+91 98301 23456');
   const [userEmail, setUserEmail] = useState('priyush@a2zee.local');
   const [userGender, setUserGender] = useState('Male');
+
+  // Load customer profile if authenticated
+  useEffect(() => {
+    async function loadCustomer() {
+      try {
+        const res = await fetch('/api/auth/me');
+        if (res.ok) {
+          const data = await res.json();
+          if (data.authenticated && data.user && data.user.role === 'CUSTOMER') {
+            if (data.user.id) setUserId(data.user.id);
+            if (data.user.name) setUserName(data.user.name);
+            if (data.user.phone) setUserPhone(data.user.phone);
+            if (data.user.email) setUserEmail(data.user.email);
+          }
+        }
+      } catch (err) {
+        console.warn('Customer auth load note:', err);
+      }
+    }
+    loadCustomer();
+  }, []);
 
   // Saved Addresses State (max 5)
   const [addresses, setAddresses] = useState([
@@ -486,6 +508,7 @@ export default function UserAppPage() {
         customerAddress: userLocation,
         latitude: userCoords.lat,
         longitude: userCoords.lng,
+        customerId: userId || undefined,
         customerName: userName,
         customerPhone: userPhone,
         scheduledTime: scheduledTimeText,

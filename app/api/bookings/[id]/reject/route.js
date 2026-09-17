@@ -64,39 +64,107 @@ export async function POST(request, { params }) {
             }, { status: 400 });
           }
 
-          const candidateWorkers = await prisma.worker.findMany({
-            where: {
-              verificationStatus: 'VERIFIED',
-              skills: {
-                some: { skillId: requiredSkillId },
-              },
-            },
-            include: {
-              user: true,
-              cooperative: true,
-              skills: {
-                include: { skill: true },
-              },
-              addresses: true,
-              bookings: {
-                where: {
-                  status: { in: ['PENDING', 'ACCEPTED', 'IN_PROGRESS'] },
+          const bookingLat = booking.latitude || 22.6950;
+          const bookingLng = booking.longitude || 88.4550;
+
+          let candidateWorkers = [];
+          try {
+            const rawCandidates = await prisma.$queryRaw`
+              SELECT
+                w.id,
+                w."userId",
+                w."cooperativeId",
+                w."verificationStatus",
+                w."availabilityStatus",
+                w."averageRating",
+                w."totalJobs",
+                w.latitude,
+                w.longitude,
+                ST_Distance(
+                  w.location,
+                  ST_SetSRID(ST_MakePoint(${bookingLng}, ${bookingLat}), 4326)::geography
+                ) AS distance_meters,
+                (ST_Distance(
+                  w.location,
+                  ST_SetSRID(ST_MakePoint(${bookingLng}, ${bookingLat}), 4326)::geography
+                ) / 1000.0) AS "distanceKm",
+                json_build_object('id', u.id, 'fullName', u."fullName", 'phone', u.phone, 'email', u.email) as user,
+                CASE WHEN co.id IS NOT NULL THEN json_build_object('id', co.id, 'name', co.name, 'registrationNumber', co."registrationNumber") ELSE NULL END as cooperative,
+                COALESCE((
+                  SELECT json_agg(json_build_object('id', wsk.id, 'skillId', wsk."skillId", 'skill', json_build_object('id', sk.id, 'name', sk.name)))
+                  FROM "WorkerSkill" wsk
+                  JOIN "Skill" sk ON wsk."skillId" = sk.id
+                  WHERE wsk."workerId" = w.id
+                ), '[]'::json) as skills,
+                COALESCE((
+                  SELECT json_agg(json_build_object('id', a.id, 'latitude', a.latitude, 'longitude', a.longitude, 'isDefault', a."isDefault", 'isCurrent', a."isCurrent"))
+                  FROM "Address" a
+                  WHERE a."workerId" = w.id
+                ), '[]'::json) as addresses,
+                COALESCE((
+                  SELECT json_agg(json_build_object('id', b.id, 'status', b.status, 'bookingDate', b."bookingDate", 'scheduledStartTime', b."scheduledStartTime", 'scheduledEndTime', b."scheduledEndTime"))
+                  FROM "Booking" b
+                  WHERE b."workerId" = w.id AND b.status IN ('PENDING', 'ACCEPTED', 'IN_PROGRESS')
+                ), '[]'::json) as bookings
+              FROM "Worker" w
+              JOIN "User" u ON w."userId" = u.id
+              LEFT JOIN "Cooperative" co ON w."cooperativeId" = co.id
+              WHERE w."verificationStatus" = 'VERIFIED'
+                AND (${Boolean(booking.isEmergency)} = false OR w."availabilityStatus" = 'AVAILABLE')
+                AND w.location IS NOT NULL
+                AND ST_DWithin(
+                  w.location,
+                  ST_SetSRID(ST_MakePoint(${bookingLng}, ${bookingLat}), 4326)::geography,
+                  20000 -- 20 km search radius in meters
+                )
+                AND EXISTS (
+                  SELECT 1 FROM "WorkerSkill" wsk2
+                  WHERE wsk2."workerId" = w.id AND wsk2."skillId" = ${requiredSkillId}::uuid
+                )
+              ORDER BY distance_meters ASC
+            `;
+
+            candidateWorkers = (rawCandidates || []).map(w => ({
+              ...w,
+              distance_meters: Number(w.distance_meters),
+              distanceKm: Number(w.distanceKm),
+            }));
+          } catch (spatialErr) {
+            console.warn('PostGIS reject query fallback:', spatialErr.message);
+            candidateWorkers = await prisma.worker.findMany({
+              where: {
+                verificationStatus: 'VERIFIED',
+                skills: {
+                  some: { skillId: requiredSkillId },
                 },
-                select: {
-                  id: true,
-                  status: true,
-                  bookingDate: true,
-                  scheduledStartTime: true,
-                  scheduledEndTime: true,
+              },
+              include: {
+                user: true,
+                cooperative: true,
+                skills: {
+                  include: { skill: true },
+                },
+                addresses: true,
+                bookings: {
+                  where: {
+                    status: { in: ['PENDING', 'ACCEPTED', 'IN_PROGRESS'] },
+                  },
+                  select: {
+                    id: true,
+                    status: true,
+                    bookingDate: true,
+                    scheduledStartTime: true,
+                    scheduledEndTime: true,
+                  },
                 },
               },
-            },
-          });
+            });
+          }
 
           // 4. Run dispatch engine strictly requiring this skill and excluding all rejected workers
           const dispatchResult = rankArtisans({
-            userLat: booking.latitude || 22.6950,
-            userLng: booking.longitude || 88.4550,
+            userLat: bookingLat,
+            userLng: bookingLng,
             workers: candidateWorkers,
             isEmergency: booking.isEmergency,
             startTime: booking.scheduledStartTime,

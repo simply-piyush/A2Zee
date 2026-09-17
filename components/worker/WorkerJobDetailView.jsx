@@ -67,10 +67,12 @@ export function WorkerJobDetailView({
   const isCompleted = booking.status === 'COMPLETED';
 
   const basePrice = Number(booking.basePrice || 250);
-  const extraAmount = Number(booking.extraAmount || 0);
+  const extraAmount = Number(booking.extraAmount || booking.additionalPrice || 0);
   const emergencySurcharge = isEmergency ? 100 : 0;
-  const totalTariff = basePrice + extraAmount + emergencySurcharge;
-  const artisanShare = Math.round((basePrice + extraAmount + emergencySurcharge) * 0.85);
+  const totalTariff = Number(booking.finalPrice || (basePrice + extraAmount + emergencySurcharge));
+  const artisanShare = booking.workerPayout !== undefined && !isNaN(Number(booking.workerPayout))
+    ? Math.round(Number(booking.workerPayout))
+    : Math.round(totalTariff * 0.85);
 
   const address = booking.customerAddress || booking.address || 'Address on file';
   const customerName = booking.customerName || booking.customer?.fullName || 'Customer';

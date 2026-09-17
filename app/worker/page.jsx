@@ -18,6 +18,8 @@ import { Button } from '@/components/ui/button';
 import { INITIAL_BOOKING, WORKERS } from '@/lib/data';
 import { calculateMonthlyEarningsBreakdown, getCurrentMonthEarnings } from '@/lib/earnings';
 
+const RAMESH_WORKER_ID = 'fc1b8756-a51e-4018-a8dc-eb7069c240a3';
+
 const INITIAL_ASSIGNED_JOBS = [
   {
     id: 'gig_em_1',
@@ -33,6 +35,8 @@ const INITIAL_ASSIGNED_JOBS = [
     etaMins: 8,
     basePrice: 350,
     extraAmount: 0,
+    finalPrice: 450,
+    workerPayout: 382.50,
     scheduledTime: 'Immediate Emergency • 15 mins ETA',
     scheduledDate: new Date(),
     scheduledStartTime: new Date().toISOString(),
@@ -55,6 +59,8 @@ const INITIAL_ASSIGNED_JOBS = [
     etaMins: 20,
     basePrice: 220,
     extraAmount: 0,
+    finalPrice: 220,
+    workerPayout: 187.00,
     scheduledTime: 'Today • 3:30 PM Slot',
     scheduledDate: new Date(),
     scheduledStartTime: new Date().toISOString(),
@@ -77,6 +83,8 @@ const INITIAL_ASSIGNED_JOBS = [
     etaMins: 15,
     basePrice: 280,
     extraAmount: 0,
+    finalPrice: 280,
+    workerPayout: 238.00,
     scheduledTime: 'Tomorrow • 11:00 AM Slot',
     scheduledDate: new Date(Date.now() + 86400000),
     scheduledStartTime: new Date(Date.now() + 86400000).toISOString(),
@@ -231,7 +239,7 @@ const INITIAL_ASSIGNED_JOBS = [
     latitude: 22.6280,
     longitude: 88.4410,
   },
-];
+].map(job => ({ ...job, workerId: RAMESH_WORKER_ID, trade: 'Electrician' }));
 
 export default function WorkerPage() {
   const defaultWorker = WORKERS[0]; // Ramesh Kumar fallback
@@ -338,16 +346,20 @@ export default function WorkerPage() {
 
         if (data.success && data.user) {
           const user = data.user;
+          const updatedProfile = {
+            id: user.worker?.id || defaultWorker.id,
+            userId: user.id,
+            name: user.name || defaultWorker.name,
+            initials: user.name ? user.name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase() : defaultWorker.initials,
+            trade: user.worker?.skills?.[0] || defaultWorker.trade,
+            society: user.worker?.cooperativeName || defaultWorker.society,
+            ncctTier: defaultWorker.ncctTier,
+            skills: user.worker?.skills?.length ? user.worker.skills : defaultWorker.skills,
+            averageRating: user.worker?.averageRating || defaultWorker.averageRating,
+          };
           setWorkerData(prev => ({
             ...prev,
-            id: user.worker?.id || prev.id,
-            name: user.name || prev.name,
-            initials: user.name ? user.name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase() : prev.initials,
-            trade: user.worker?.skills?.[0] || prev.trade,
-            society: user.worker?.cooperativeName || prev.society,
-            ncctTier: prev.ncctTier,
-            skills: user.worker?.skills?.length ? user.worker.skills : prev.skills,
-            averageRating: user.worker?.averageRating || prev.averageRating,
+            ...updatedProfile,
           }));
 
           if (user.worker?.availabilityStatus) {
@@ -357,6 +369,10 @@ export default function WorkerPage() {
             setWorkerCoords({ lat: user.worker.latitude, lng: user.worker.longitude });
             reverseGeocode(user.worker.latitude, user.worker.longitude);
           }
+
+          if (user.worker?.id) {
+            loadBookings(updatedProfile);
+          }
         }
       } catch (e) {
         console.warn('Could not fetch authenticated worker profile:', e);
@@ -365,40 +381,60 @@ export default function WorkerPage() {
     loadWorkerProfile();
   }, []);
 
-  // 1b. Fetch bookings from API and merge into assignedJobs with continuous live synchronization
-  const loadBookings = useCallback(async () => {
+  // 1b. Fetch bookings from API strictly scoped to this authenticated worker
+  const loadBookings = useCallback(async (targetWorker = workerData) => {
+    const targetId = targetWorker?.id;
+    if (!targetId) return;
+
     try {
-      const res = await fetch('/api/bookings');
+      const res = await fetch(`/api/bookings?workerId=${encodeURIComponent(targetId)}`);
       const data = await res.json();
-      const list = data.data || data.bookings;
-      if (data.success && Array.isArray(list) && list.length > 0) {
-        setAssignedJobs(prev => {
-          const incomingMap = new Map(list.map(b => [b.id, b]));
-          const updatedExisting = prev.map(job => {
-            const incoming = incomingMap.get(job.id) || (job.bookingCode && list.find(b => b.bookingCode === job.bookingCode));
-            if (incoming) {
-              incomingMap.delete(incoming.id);
-              return { 
-                ...job, 
-                ...incoming, 
-                status: incoming.status || job.status,
-                finalPrice: Number(incoming.finalPrice || job.finalPrice || 250),
-              };
-            }
-            return job;
-          });
-          const newOnes = Array.from(incomingMap.values());
-          return [...newOnes, ...updatedExisting];
-        });
-      }
+      const list = data.data || data.bookings || [];
+
+      // Strictly isolate to bookings belonging to targetWorker
+      const strictlyWorkerBookings = (Array.isArray(list) ? list : []).filter(b => {
+        const bWorkerId = b.workerId || b.worker?.id;
+        return (
+          bWorkerId === targetId ||
+          (b.worker && (
+            (b.worker.user && b.worker.user.id === targetWorker.userId) ||
+            b.worker.name === targetWorker.name
+          ))
+        );
+      });
+
+      // If this worker is Ramesh Kumar (Electrician demo fallback), merge with his mock jobs so demo history remains rich
+      const isRamesh = (targetId === RAMESH_WORKER_ID || targetId === 'wrk_ramesh' || targetWorker.name === 'Ramesh Kumar') && targetWorker.trade === 'Electrician';
+      const baseMockJobs = isRamesh ? INITIAL_ASSIGNED_JOBS : [];
+
+      // Merge: DB bookings take precedence over mock jobs with matching ID or bookingCode
+      const incomingMap = new Map(strictlyWorkerBookings.map(b => [b.id, b]));
+      const updatedExisting = baseMockJobs.map(job => {
+        const incoming = incomingMap.get(job.id) || (job.bookingCode && strictlyWorkerBookings.find(b => b.bookingCode === job.bookingCode));
+        if (incoming) {
+          incomingMap.delete(incoming.id);
+          return {
+            ...job,
+            ...incoming,
+            status: incoming.status || job.status,
+            finalPrice: Number(incoming.finalPrice || job.finalPrice || 250),
+          };
+        }
+        return job;
+      });
+
+      const newDbBookings = Array.from(incomingMap.values());
+      const allWorkerJobs = [...newDbBookings, ...updatedExisting];
+
+      setAssignedJobs(allWorkerJobs);
     } catch (e) {
       console.warn('Could not load live bookings:', e);
     }
-  }, []);
+  }, [workerData]);
 
   useEffect(() => {
     loadBookings();
-    const interval = setInterval(loadBookings, 4000);
+    const interval = setInterval(() => loadBookings(), 4000);
 
     let channel;
     if (typeof window !== 'undefined' && 'BroadcastChannel' in window) {
@@ -621,12 +657,14 @@ export default function WorkerPage() {
       const baseNum = Number(selectedJob.basePrice || 0);
       const emergencySurcharge = selectedJob.isEmergency ? 100 : 0;
       const newFinalPrice = baseNum + updatedExtra + emergencySurcharge;
+      const newWorkerPayout = Math.round(newFinalPrice * 0.85 * 100) / 100;
       
       const updatedJob = {
         ...selectedJob,
         extraAmount: updatedExtra,
         additionalPrice: updatedExtra,
         finalPrice: newFinalPrice,
+        workerPayout: newWorkerPayout,
         extraChargeReason: chargeData.reason,
         extraCharges: updatedCharges,
       };
@@ -655,6 +693,7 @@ export default function WorkerPage() {
                   extraAmount: updatedExtra, 
                   additionalPrice: updatedExtra, 
                   finalPrice: newFinalPrice,
+                  workerPayout: newWorkerPayout,
                   extraChargeReason: chargeData.reason,
                   extraCharges: updatedCharges,
                 }
@@ -668,6 +707,7 @@ export default function WorkerPage() {
               extraAmount: updatedExtra, 
               additionalPrice: updatedExtra,
               finalPrice: newFinalPrice,
+              workerPayout: newWorkerPayout,
               extraCharges: updatedCharges,
             }
           }));
@@ -688,8 +728,9 @@ export default function WorkerPage() {
     if (!selectedJob) return;
     const nowIso = new Date().toISOString();
     const baseNum = Number(selectedJob.basePrice || 0);
-    const extraNum = Number(selectedJob.extraAmount || 0);
-    const finalPrice = Number(selectedJob.finalPrice) || (baseNum + extraNum);
+    const extraNum = Number(selectedJob.extraAmount || selectedJob.additionalPrice || 0);
+    const emergencySurcharge = selectedJob.isEmergency ? 100 : 0;
+    const finalPrice = Number(selectedJob.finalPrice) || (baseNum + extraNum + emergencySurcharge);
     const workerPayout = selectedJob.workerPayout !== undefined ? Number(selectedJob.workerPayout) : (finalPrice * 0.85);
 
     const updatedJob = { 
@@ -793,8 +834,22 @@ export default function WorkerPage() {
   };
 
   // Filter jobs by date if a calendar filter is active; otherwise show active non-completed work orders
+  // Strictly enforce that the job belongs to this specific worker - prevents cross-worker job leakage
   const displayedJobs = useMemo(() => {
     return assignedJobs.filter((job) => {
+      // 1. Worker ownership check
+      const jobWorkerId = job.workerId || job.worker?.id;
+      const belongsToWorker = (
+        (jobWorkerId && (jobWorkerId === workerData.id || jobWorkerId === workerData.workerId)) ||
+        (job.worker && (
+          (job.worker.user && job.worker.user.fullName === workerData.name) ||
+          job.worker.name === workerData.name
+        )) ||
+        (!jobWorkerId && !job.worker && (job.trade?.toLowerCase() === workerData.trade?.toLowerCase() || workerData.name === 'Ramesh Kumar'))
+      );
+      if (!belongsToWorker) return false;
+
+      // 2. Date filter check
       if (!filterDate) return job.status !== 'COMPLETED';
       const dateVal = job.scheduledDate || job.scheduledStartTime;
       if (!dateVal) return true;
@@ -806,7 +861,7 @@ export default function WorkerPage() {
         jobD.getDate() === selD.getDate()
       );
     });
-  }, [assignedJobs, filterDate]);
+  }, [assignedJobs, filterDate, workerData]);
 
   return (
     <div className="flex-1 flex flex-col w-full pb-28 animate-in fade-in duration-200">
@@ -995,15 +1050,30 @@ export default function WorkerPage() {
 
             {/* List of Minimal Cards */}
             <div className="space-y-3">
-              {displayedJobs.map((job) => (
-                <WorkerJobMinimalCard
-                  key={job.id}
-                  booking={job}
-                  onOpenDetails={handleOpenJobDetails}
-                  onOpenRejectModal={handleInitiateReject}
-                  isSubmitting={isSubmitting}
-                />
-              ))}
+              {displayedJobs.length > 0 ? (
+                displayedJobs.map((job) => (
+                  <WorkerJobMinimalCard
+                    key={job.id}
+                    booking={job}
+                    onOpenDetails={handleOpenJobDetails}
+                    onOpenRejectModal={handleInitiateReject}
+                    isSubmitting={isSubmitting}
+                  />
+                ))
+              ) : (
+                <div className="p-8 text-center bg-white border border-dashed border-slate-200 rounded-2xl space-y-2">
+                  <p className="text-sm font-semibold text-slate-600">No active work orders for this artisan.</p>
+                  <Button 
+                    type="button" 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={() => setFilterDate(null)}
+                    className="rounded-xl text-xs cursor-pointer"
+                  >
+                    View All Active Assignments
+                  </Button>
+                </div>
+              )}
             </div>
           </main>
         </div>

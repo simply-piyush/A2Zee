@@ -43,6 +43,9 @@ function CreateJobForm() {
   // Customer location & coords
   const [userLocation, setUserLocation] = useState('Madhyamgram, Kolkata');
   const [userCoords, setUserCoords] = useState({ lat: 22.6950, lng: 88.4550 });
+  const [userId, setUserId] = useState(null);
+  const [userName, setUserName] = useState('Priyush Customer');
+  const [userPhone, setUserPhone] = useState('+91 98301 23456');
   const [nearbyArtisans, setNearbyArtisans] = useState([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [assignedArtisan, setAssignedArtisan] = useState(null);
@@ -51,6 +54,26 @@ function CreateJobForm() {
   // Done animation modal state
   const [showDoneModal, setShowDoneModal] = useState(false);
   const [confirmedBookingData, setConfirmedBookingData] = useState(null);
+
+  // Load authenticated customer profile if available
+  useEffect(() => {
+    async function loadCustomer() {
+      try {
+        const res = await fetch('/api/auth/me');
+        if (res.ok) {
+          const data = await res.json();
+          if (data.authenticated && data.user && data.user.role === 'CUSTOMER') {
+            if (data.user.id) setUserId(data.user.id);
+            if (data.user.name) setUserName(data.user.name);
+            if (data.user.phone) setUserPhone(data.user.phone);
+          }
+        }
+      } catch (err) {
+        console.warn('Customer auth check note in create-job:', err);
+      }
+    }
+    loadCustomer();
+  }, []);
 
   // Update preset list whenever trade changes
   useEffect(() => {
@@ -116,8 +139,9 @@ function CreateJobForm() {
         customerAddress: userLocation,
         latitude: userCoords.lat,
         longitude: userCoords.lng,
-        customerName: 'Priyush',
-        customerPhone: '+91 98301 23456',
+        customerId: userId || undefined,
+        customerName: userName,
+        customerPhone: userPhone,
         scheduledTime: scheduledTimeText,
         scheduledStartTime: isEmergency ? new Date().toISOString() : baseStartTime.toISOString(),
         scheduledEndTime: isEmergency ? new Date(Date.now() + 7200000).toISOString() : baseEndTime.toISOString(),

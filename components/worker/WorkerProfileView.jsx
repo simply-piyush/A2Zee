@@ -1,13 +1,13 @@
 'use client';
 
 import React, { useState } from 'react';
-import { 
-  Receipt, 
-  ShieldCheck, 
-  User, 
-  Phone, 
-  Mail, 
-  ChevronRight, 
+import {
+  Receipt,
+  ShieldCheck,
+  User,
+  Phone,
+  Mail,
+  ChevronRight,
   LogOut,
   MapPin,
   Building2,
@@ -53,13 +53,13 @@ export function WorkerProfileView({
   };
 
   const skillsList = worker?.skills || [
-    'Electrician', 'Ceiling Fan Repair', 'MCB Switchboard', 
+    'Electrician', 'Ceiling Fan Repair', 'MCB Switchboard',
     'Home Wiring', 'Inverter Servicing', 'Appliance Diagnostics'
   ];
 
   return (
     <div className="flex-1 flex flex-col max-w-md md:max-w-3xl mx-auto w-full pb-24 animate-in fade-in duration-200">
-      
+
       {/* Top Header Banner matching user/create-job/page.jsx */}
       <TopHeaderBanner
         title="ARTISAN PROFILE"
@@ -142,10 +142,10 @@ export function WorkerProfileView({
       </Dialog>
 
       <div className="p-6 space-y-6 flex-1">
-        
+
         {/* 1. Profile Card with flex-direction row (Avatar + Column Details) */}
         <div className="bg-white rounded-3xl p-6 border border-slate-200 shadow-xs flex flex-row items-center gap-5">
-          
+
           {/* Profile Avatar */}
           <div className="w-20 h-20 rounded-2xl bg-[#1F4072] text-white text-3xl font-bold flex items-center justify-center flex-shrink-0 shadow-md border-2 border-white font-brand">
             {name[0]?.toUpperCase() || 'R'}
@@ -163,7 +163,7 @@ export function WorkerProfileView({
             </div>
 
             <p className="text-xs font-semibold text-[#1F4072]">
-              {trade} • {worker?.society || 'Pragati Labour Cooperative'}
+              {trade} • {worker?.society || 'Labour Cooperative'}
             </p>
 
             <div className="space-y-0.5 text-xs text-slate-500 pt-0.5">
@@ -192,7 +192,7 @@ export function WorkerProfileView({
             </div>
           </div>
 
-        </div>  
+        </div>
 
         {/* 2. Simple List: 'Your Completed Gigs & Earnings' option matching UserProfileView */}
         <div className="bg-white rounded-3xl border border-slate-200 shadow-xs overflow-hidden">
@@ -201,26 +201,12 @@ export function WorkerProfileView({
             onClick={onOpenWallet}
             className="w-full p-5 flex items-center justify-between hover:bg-slate-50 transition-colors cursor-pointer text-left block"
           >
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-[#E5EEFF] text-[#1F4072] flex items-center justify-center font-bold">
-                <Receipt className="w-5 h-5" />
-              </div>
-              <div>
-                <h3 className="font-bold text-sm sm:text-base text-slate-900">
-                  Your Completed Gigs & Settlements
-                </h3>
-                <p className="text-xs text-slate-500">
-                  52 gigs completed • 85% net payout wallet & ledger
-                </p>
-              </div>
-            </div>
+            <h3 className="font-bold text-sm sm:text-base text-slate-900 flex items-center gap-2">
+              <Receipt className="w-4 h-4 text-[#1F4072]" />
+              <span>Your Completed Gigs & Settlements</span>
+            </h3>
+            <ChevronRight className="w-5 h-5 text-slate-400" />
 
-            <div className="flex items-center gap-2">
-              <span className="text-xs font-bold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-200">
-                ₹4,200.00
-              </span>
-              <ChevronRight className="w-5 h-5 text-slate-400" />
-            </div>
           </button>
         </div>
 
@@ -266,9 +252,9 @@ export function WorkerProfileView({
 
           <div className="flex flex-wrap gap-2 pt-1">
             {skillsList.map((skill, idx) => (
-              <Badge 
-                key={idx} 
-                variant="primary" 
+              <Badge
+                key={idx}
+                variant="primary"
                 className="px-3 py-1 rounded-xl text-xs font-semibold bg-[#1F4072]/5 text-[#1F4072] border-[#1F4072]/20 flex items-center gap-1.5"
               >
                 <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />

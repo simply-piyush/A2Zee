@@ -41,9 +41,9 @@ export async function GET(request) {
 
     let candidateWorkers = [];
     try {
-      // Single round-trip SQL query fetching workers with JSON relations
-      // (Bypasses Prisma's 7-query cascade, cutting latency from ~3500ms to ~270ms)
-      candidateWorkers = await prisma.$queryRaw`
+      // Single round-trip PostGIS spatial query using GiST index
+      // ST_DWithin filters to 20 km (20,000 meters) at DB level; ST_Distance calculates exact distance in meters
+      const rawCandidates = await prisma.$queryRaw`
         SELECT
           w.id,
           w."userId",
@@ -54,6 +54,15 @@ export async function GET(request) {
           w."totalJobs",
           w.latitude,
           w.longitude,
+          -- PostGIS exact distance calculation in meters and kilometers
+          ST_Distance(
+            w.location,
+            ST_SetSRID(ST_MakePoint(${userLng}, ${userLat}), 4326)::geography
+          ) AS distance_meters,
+          (ST_Distance(
+            w.location,
+            ST_SetSRID(ST_MakePoint(${userLng}, ${userLat}), 4326)::geography
+          ) / 1000.0) AS "distanceKm",
           -- User
           json_build_object(
             'id', u.id,
@@ -105,12 +114,25 @@ export async function GET(request) {
         LEFT JOIN "Cooperative" co ON w."cooperativeId" = co.id
         WHERE w."verificationStatus" = 'VERIFIED'
           AND (${isEmergency} = false OR w."availabilityStatus" = 'AVAILABLE')
+          AND w.location IS NOT NULL
+          AND ST_DWithin(
+            w.location,
+            ST_SetSRID(ST_MakePoint(${userLng}, ${userLat}), 4326)::geography,
+            20000 -- 20 km search radius in meters
+          )
           AND (${skillPattern}::text IS NULL OR EXISTS (
             SELECT 1 FROM "WorkerSkill" wsk2
             JOIN "Skill" sk2 ON wsk2."skillId" = sk2.id
             WHERE wsk2."workerId" = w.id AND sk2.name ILIKE ${skillPattern}
           ))
+        ORDER BY distance_meters ASC
       `;
+
+      candidateWorkers = (rawCandidates || []).map(w => ({
+        ...w,
+        distance_meters: Number(w.distance_meters),
+        distanceKm: Number(w.distanceKm),
+      }));
     } catch (dbErr) {
       console.warn('Prisma query in nearby workers note:', dbErr.message);
     }

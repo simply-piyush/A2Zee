@@ -52,11 +52,11 @@ export function WorkerWalletView({
     if (selectedMonthKey === 'ALL') {
       const allCompleted = assignedJobs.filter(j => j.status === 'COMPLETED');
       const totalPayout = allCompleted.reduce((sum, j) => {
-        const finalPrice = Number(j.finalPrice) || (Number(j.basePrice || 0) + Number(j.extraAmount || 0));
+        const finalPrice = Number(j.finalPrice) || (Number(j.basePrice || 0) + Number(j.extraAmount || j.additionalPrice || 0) + (j.isEmergency ? 100 : 0));
         return sum + (j.workerPayout !== undefined ? Number(j.workerPayout) : (finalPrice * 0.85));
       }, 0);
       const totalGross = allCompleted.reduce((sum, j) => {
-        return sum + (Number(j.finalPrice) || (Number(j.basePrice || 0) + Number(j.extraAmount || 0)));
+        return sum + (Number(j.finalPrice) || (Number(j.basePrice || 0) + Number(j.extraAmount || j.additionalPrice || 0) + (j.isEmergency ? 100 : 0)));
       }, 0);
 
       return {
@@ -253,8 +253,9 @@ export function WorkerWalletView({
               <TableBody>
                 {currentSelectionData.jobs.map((tx) => {
                   const baseNum = Number(tx.basePrice || 0);
-                  const extraNum = Number(tx.extraAmount || 0);
-                  const gross = Number(tx.finalPrice) || (baseNum + extraNum);
+                  const extraNum = Number(tx.extraAmount || tx.additionalPrice || 0);
+                  const emergencyNum = tx.isEmergency ? 100 : 0;
+                  const gross = Number(tx.finalPrice) || (baseNum + extraNum + emergencyNum);
                   const payout = tx.workerPayout !== undefined ? Number(tx.workerPayout) : (gross * 0.85);
 
                   // Format scheduledEndTime
