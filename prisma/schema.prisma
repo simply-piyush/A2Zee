@@ -182,8 +182,10 @@ model Service {
   createdAt   DateTime @default(now()) @db.Timestamptz(3)
 
   // Relations
-  skill       Skill    @relation(fields: [skillId], references: [id])
-  bookings    Booking[]
+  skill           Skill            @relation(fields: [skillId], references: [id])
+  bookings        Booking[]
+  demandHistories DemandHistory[]
+  demandForecasts DemandForecast[]
 }
 
 
@@ -319,4 +321,59 @@ model Address {
 
   @@index([userId])
   @@index([workerId])
+}
+
+
+// ==========================
+// 11. DEMAND HISTORY (AGGREGATED HISTORICAL DEMAND)
+// ==========================
+
+model DemandHistory {
+  id             String   @id @default(uuid()) @db.Uuid
+  h3Index        String   @db.VarChar(20)
+  serviceId      String   @db.Uuid
+  date           DateTime @db.Date
+  timeSlot       String   @default("ALL_DAY") @db.VarChar(20)
+  bookingCount   Int      @default(0)
+  emergencyCount Int      @default(0)
+  createdAt      DateTime @default(now()) @db.Timestamptz(3)
+
+  // Relation
+  service        Service  @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+
+  @@unique([h3Index, serviceId, date, timeSlot])
+  @@index([date])
+  @@index([h3Index])
+  @@index([serviceId, date])
+}
+
+
+// ==========================
+// 12. DEMAND FORECAST (MODEL PREDICTIONS)
+// ==========================
+
+model DemandForecast {
+  id              String   @id @default(uuid()) @db.Uuid
+
+  h3Index         String   @db.VarChar(20)
+  serviceId       String   @db.Uuid
+
+  forecastDate    DateTime @db.Date
+  timeSlot        String   @default("ALL_DAY") @db.VarChar(20)
+
+  predictedDemand Float
+  confidence      Float?
+  lowerBound      Float?
+  upperBound      Float?
+
+  modelVersion    String?  @db.VarChar(50)
+  generatedAt     DateTime @default(now()) @db.Timestamptz(3)
+
+  // Relation
+  service         Service  @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+
+  @@unique([h3Index, serviceId, forecastDate, timeSlot])
+  @@index([forecastDate])
+  @@index([h3Index])
+  @@index([serviceId, forecastDate])
 }

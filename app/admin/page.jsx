@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { 
   CheckCircle2, AlertCircle, RefreshCw, X,
-  ClipboardList, HardHat, Users, ShieldAlert, Landmark
+  ClipboardList, HardHat, Users, ShieldAlert, Landmark, Sparkles
 } from 'lucide-react';
 import { LandingHeader } from '@/components/landing/LandingHeader';
 import { AdminMetricsBanner } from '@/components/admin/AdminMetricsBanner';
@@ -13,6 +13,7 @@ import { CustomersTab } from '@/components/admin/CustomersTab';
 import { WorkerApprovalsTab } from '@/components/admin/WorkerApprovalsTab';
 import { RevenueLedgerTab } from '@/components/admin/RevenueLedgerTab';
 import { BookingDetailModal } from '@/components/admin/BookingDetailModal';
+import { DemandForecastTab } from '@/components/admin/DemandForecastTab';
 
 export default function AdminDashboardPage() {
   // Default tab is 'bookings' as explicitly requested
@@ -119,6 +120,7 @@ export default function AdminDashboardPage() {
 
   const ADMIN_TABS = [
     { id: 'bookings', label: 'Bookings & Dispatches', icon: ClipboardList, count: bookingsList.length },
+    { id: 'forecast', label: 'AI Demand Forecast', icon: Sparkles },
     { id: 'workers', label: 'Artisan Directory', icon: HardHat, count: workersList.length },
     { id: 'customers', label: 'Citizen Roster', icon: Users, count: customersList.length },
     { id: 'verifications', label: 'Approvals Queue', icon: ShieldAlert, count: pendingVerifications.length, alert: pendingVerifications.length > 0 },
@@ -210,6 +212,11 @@ export default function AdminDashboardPage() {
               bookings={bookingsList}
               onSelectBooking={(b) => setSelectedBooking(b)}
             />
+          )}
+
+          {/* TAB: AI DEMAND FORECAST & INDIA H3 MAP */}
+          {activeTab === 'forecast' && (
+            <DemandForecastTab />
           )}
 
           {/* TAB 2: WORKERS DIRECTORY */}
