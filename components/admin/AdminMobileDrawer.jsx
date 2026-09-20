@@ -2,7 +2,7 @@
 
 import React from 'react';
 import Link from 'next/link';
-import { usePathname, useSearchParams } from 'next/navigation';
+import { usePathname } from 'next/navigation';
 import {
   X, ShieldCheck, RefreshCw, LogOut, ChevronRight, Activity, Sparkles
 } from 'lucide-react';
@@ -13,8 +13,6 @@ import { getAdminNavItems } from './adminNavConfig';
 
 export function AdminMobileDrawer() {
   const pathname = usePathname();
-  const searchParams = useSearchParams();
-  const currentTabParam = searchParams.get('tab') || 'forecast';
 
   const {
     isMobileMenuOpen,
