@@ -14,7 +14,7 @@ import { HeaderBackground } from '@/components/ui/header-background';
  */
 export function LandingHeader({
   variant = 'landing',
-  title = 'A2Zee',
+  title = 'A2ZEE',
   badge = null,
 }) {
   const isAdmin = variant === 'admin';
@@ -49,7 +49,7 @@ export function LandingHeader({
                 className="cursor-pointer select-none flex items-center gap-2.5"
               >
                 <span className="font-display text-2xl sm:text-3xl text-white tracking-wider uppercase font-bold drop-shadow-xs">
-                  A2Zee
+                  A2ZEE
                 </span>
                 <span className="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-white/10 text-white/90 border border-white/20 text-[11px] font-bold tracking-wider uppercase backdrop-blur-xs max-w-[280px] truncate" title={badge || 'Apex Admin'}>
                   <ShieldCheck className="w-3.5 h-3.5 text-emerald-300 shrink-0" />

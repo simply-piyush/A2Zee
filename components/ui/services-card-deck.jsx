@@ -172,7 +172,7 @@ export function ServicesCardDeck() {
             Household Services & Certified Karigars
           </h2>
           <p className="text-sm sm:text-base text-slate-600 max-w-3xl leading-relaxed">
-            Direct dispatch from local primary labour cooperative societies. Every trade is audited under NCCT standards with guaranteed minimum tariffs, fair 85% worker take-home, and transparent ₹150 base inspections.
+            Direct dispatch from local primary labour cooperative societies. Every trade is audited under NCCT standards with guaranteed minimum tariffs, fair 75% worker take-home (+ 100% tips), and transparent ₹150 base inspections.
           </p>
         </div>
 

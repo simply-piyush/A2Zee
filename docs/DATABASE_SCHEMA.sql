@@ -193,8 +193,9 @@ CREATE TABLE transactions (
     booking_id UUID REFERENCES bookings(id) ON DELETE CASCADE,
     transaction_reference VARCHAR(100) UNIQUE NOT NULL,
     total_paid NUMERIC(10, 2) NOT NULL,
-    worker_payout_amount NUMERIC(10, 2) NOT NULL,    -- 85%
+    worker_payout_amount NUMERIC(10, 2) NOT NULL,    -- 75% (+ 100% tips)
     society_operating_share NUMERIC(10, 2) NOT NULL, -- 10%
+    platform_operating_share NUMERIC(10, 2) NOT NULL, -- 10%
     welfare_fund_deduction NUMERIC(10, 2) NOT NULL,  -- 5%
     payment_method VARCHAR(50) DEFAULT 'UPI_MOCK',
     is_mock BOOLEAN DEFAULT TRUE,

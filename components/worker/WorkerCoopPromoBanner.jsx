@@ -11,7 +11,7 @@ export function WorkerCoopPromoBanner({ onOpenWallet }) {
         COOPERATIVE OWNERSHIP • NO PLATFORM CUTS
       </h2>
       <p className="text-sm md:text-base text-gray-600 max-w-xl mx-auto font-normal">
-        Under NCCT & Ministry of Cooperation bylaws, artisans retain 85% of total job fees with 5% mutual welfare health credits. Payouts settle directly to your UPI ID without hidden deductions.
+        Under NCCT & Ministry of Cooperation bylaws, artisans retain 75% of total job fees (+ 100% tips) with 5% mutual welfare health credits, 10% cooperative society fund, and 10% platform operations. Payouts settle directly to your UPI ID without predatory deductions.
       </p>
       <div className="pt-2">
         <Button

@@ -112,8 +112,9 @@ function formatPrismaBooking(b) {
       rating: b.review.rating,
       comment: b.review.comment,
     } : null,
-    workerPayout: Math.round((finalPriceNum * 0.85 + tipGratitude) * 100) / 100,
+    workerPayout: Math.round((finalPriceNum * 0.75 + tipGratitude) * 100) / 100,
     societyFund: Math.round(finalPriceNum * 0.10 * 100) / 100,
+    platformFee: Math.round(finalPriceNum * 0.10 * 100) / 100,
     welfareDeposit: Math.round(finalPriceNum * 0.05 * 100) / 100,
     createdAt: b.createdAt,
   };

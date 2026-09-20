@@ -72,7 +72,7 @@ export function WorkerJobDetailView({
   const totalTariff = Number(booking.finalPrice || (basePrice + extraAmount + emergencySurcharge));
   const artisanShare = booking.workerPayout !== undefined && !isNaN(Number(booking.workerPayout))
     ? Math.round(Number(booking.workerPayout))
-    : Math.round(totalTariff * 0.85);
+    : Math.round(totalTariff * 0.75 + Number(booking.tipGratitude || 0));
 
   const address = booking.customerAddress || booking.address || 'Address on file';
   const customerName = booking.customerName || booking.customer?.fullName || 'Customer';
@@ -223,7 +223,7 @@ export function WorkerJobDetailView({
               </div>
 
               <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-between text-emerald-800 font-outfit">
-                <span className="font-bold">Your Net Payout (85%)</span>
+                <span className="font-bold">Your Net Payout (75% + Tips)</span>
                 <span className="text-lg font-extrabold text-emerald-700">₹{artisanShare.toFixed(2)}</span>
               </div>
             </div>

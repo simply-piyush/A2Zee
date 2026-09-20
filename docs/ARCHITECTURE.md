@@ -26,7 +26,7 @@ flowchart TB
         BOOK_MOD["Booking & Scheduling Engine<br/>(State Machine / Dispatcher)"]
         GEO_MOD["Geo-Spatial Routing Service<br/>(PostGIS Proximity Matcher)"]
         BILL_MOD["Billing & Split-Payment Engine<br/>(Escrow & Mock Payment)"]
-        COOP_MOD["Cooperative & Welfare Service<br/>(85-10-5 Split Ledger)"]
+        COOP_MOD["Cooperative & Welfare Service<br/>(75-10-10-5 Split Ledger)"]
         AI_MOD["AI Demand Forecaster<br/>(FastAPI / Prophet ML)"]
     end
 
@@ -94,7 +94,7 @@ stateDiagram-v2
     COMPLETED --> BILL_GENERATED: System Computes Tariff (Base + Extra + Materials + GST)
     BILL_INSPECTION_ONLY --> BILL_GENERATED
     BILL_GENERATED --> PAID: Customer Clicks 'Pay Bill' (Mock Payment / Gateway)
-    PAID --> SPLIT_EXECUTED: 85% to Worker Wallet, 10% to Society, 5% to Welfare
+    PAID --> SPLIT_EXECUTED: 75% to Worker (+ Tips), 10% to Society, 10% to Platform, 5% to Welfare
     SPLIT_EXECUTED --> RATED: Customer & Worker Mutual Reviews
     RATED --> [*]
 ```
@@ -141,13 +141,14 @@ LIMIT 5;
 
 ---
 
-## 4. Financial Split Ledger Architecture (85-10-5)
+## 4. Financial Split Ledger Architecture (75-10-10-5)
 
 Whenever a customer settles an invoice on the bill page:
-1. **Total Invoice Amount (e.g., ₹600.00)**
-2. **Worker Payout (85% = ₹510.00):** Immediately credited to worker's in-app wallet, accessible for instant UPI bank transfer.
+1. **Total Labor Amount (e.g., ₹600.00) + 100% Tips (e.g., ₹50.00)**
+2. **Worker Payout (75% + 100% Tips = ₹450.00 + ₹50.00 = ₹500.00):** Immediately credited to worker's in-app wallet, accessible for instant UPI bank transfer.
 3. **Cooperative Society Fund (10% = ₹60.00):** Credited to the local Primary Society ledger for administrative overhead, tool rental subsidies, and cooperative dividend reserves.
-4. **Worker Welfare Pool (5% = ₹30.00):** Locked in the Federation Social Security Trust fund. When balance reaches ₹20 or ₹436, PMSBY or PMJJBY premiums are automatically funded on the worker's behalf.
+4. **A2ZEE Platform Operations (10% = ₹60.00):** Allocated to platform digital infrastructure, AI demand forecasting servers, dynamic routing, and communications gateways.
+5. **Worker Welfare Pool (5% = ₹30.00):** Locked in the Federation Social Security Trust fund. When balance reaches ₹20 or ₹436, PMSBY or PMJJBY premiums are automatically funded on the worker's behalf.
 
 ---
 

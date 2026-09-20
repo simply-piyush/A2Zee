@@ -198,7 +198,7 @@ export function AuthForm() {
             <ArrowLeft className="w-6 h-6 sm:w-7 sm:h-7 text-white stroke-[2.5]" />
           </button>
           <h1 className="text-3xl items-center justify-center sm:text-4xl font-extrabold text-white tracking-tight font-display drop-shadow-xs">
-            Welcome to A2Zee
+            Welcome to A2ZEE
           </h1>
         </div>
         <p className="text-xs sm:text-sm text-white/80 font-medium">
@@ -364,7 +364,7 @@ export function AuthForm() {
                   }`}
                 >
                   <span>Cooperative Artisan</span>
-                  <span className="text-[10px] font-normal text-slate-500">Earn 85% payout</span>
+                  <span className="text-[10px] font-normal text-slate-500">Earn 75% payout + tips</span>
                 </button>
               </div>
             </div>

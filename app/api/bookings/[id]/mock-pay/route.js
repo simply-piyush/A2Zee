@@ -94,9 +94,10 @@ export async function POST(request, { params }) {
           }).catch(() => {});
         }
 
-        // 4. Calculate 85-10-5 split with 100% of tip to worker
-        const workerWallet85 = Math.round((subtotal * 0.85 + tipNum) * 100) / 100;
+        // 4. Calculate 75-10-10-5 split with 100% of tip to worker
+        const workerWallet75 = Math.round((subtotal * 0.75 + tipNum) * 100) / 100;
         const societyOps10 = Math.round(subtotal * 0.10 * 100) / 100;
+        const platformOps10 = Math.round(subtotal * 0.10 * 100) / 100;
         const welfarePool5 = Math.round(subtotal * 0.05 * 100) / 100;
 
         // Sync in-memory store
@@ -121,8 +122,9 @@ export async function POST(request, { params }) {
             amount: totalCharged,
             tipGratitude: tipNum,
             cooperativeSplit: {
-              workerWallet85,
+              workerWallet75,
               societyOperations10: societyOps10,
+              platformOperations10: platformOps10,
               welfareTrust5: welfarePool5,
             },
           },

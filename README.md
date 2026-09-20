@@ -1,4 +1,4 @@
-# A2Zee (SahakarSeva)
+# A2ZEE (SahakarSeva)
 ## Cooperative Gig Services Platform for Household & Community Services
 **Motto:** *"Your Need. Our People. One Platform."*  
 **Problem Statement ID:** 26089 | **Ministry of Cooperation** | **National Council for Cooperative Training (NCCT)**  
@@ -7,12 +7,13 @@
 ---
 
 ## 📌 Executive Summary
-**A2Zee** is a cooperative-owned, digital-first service marketplace built under the motto *"Your Need. Our People. One Platform."* It directly connects Labour Cooperative Federations, Primary Labour Cooperative Societies, and verified skilled workers with households, resident welfare associations (RWAs), and public/private institutions. 
+**A2ZEE** is a cooperative-owned, digital-first service marketplace built under the motto *"Your Need. Our People. One Platform."* It directly connects Labour Cooperative Federations, Primary Labour Cooperative Societies, and verified skilled workers with households, resident welfare associations (RWAs), and public/private institutions. 
 
-Unlike private aggregators that extract 20–35% predatory commissions from gig workers, A2Zee operates on a **pioneering 85–10–5 cooperative economic model**:
-- **85%** directly paid to the service provider (Worker / *Sahakari Mitra*).
-- **10%** allocated to the Primary Cooperative Society & Federation for operational sustainability and tools/equipment support.
-- **5%** deposited into a locked **Worker Welfare, Healthcare & Pension Fund** (integrating Pradhan Mantri Suraksha Bima Yojana - PMSBY, PMJJBY, and Ayushman Bharat health checkups).
+Unlike private aggregators that extract 20–35% predatory commissions from gig workers, A2ZEE operates on a **pioneering 75–10–10–5 cooperative economic model**:
+- **75%** directly paid to the service provider (Worker / *Sahakari Mitra*) + **100% of gratitude tips**.
+- **10%** allocated to the Primary Cooperative Society & Federation for operational sustainability, tool banks, and certified equipment support.
+- **10%** allocated to A2ZEE Platform operations (AI demand forecasting engine, cloud servers, routing infrastructure, and SMS/call gateways).
+- **5%** deposited into a locked **Worker Welfare, Healthcare & Pension Fund** (integrating Pradhan Mantri Suraksha Bima Yojana - PMSBY, PMJJBY, and emergency medical relief).
 
 ---
 
@@ -65,7 +66,7 @@ Unlike private aggregators that extract 20–35% predatory commissions from gig 
 ┌───────────────────┐           ┌───────────────────┐           ┌───────────────────┐
 │  BOOKING ENGINE   │           │ GEO-MATCH SERVICE │           │  COOPERATIVE &    │
 │ State Machine &   │           │ PostGIS Proximity │           │  WELFARE LEDGER   │
-│ Invoicing/Payment │           │ Cluster Routing   │           │ 85-10-5 Split     │
+│ Invoicing/Payment │           │ Cluster Routing   │           │ 75-10-10-5 Split  │
 └────────┬──────────┘           └─────────┬─────────┘           └─────────┬─────────┘
          │                                │                               │
          └────────────────────────────────┼───────────────────────────────┘
@@ -87,7 +88,7 @@ Unlike private aggregators that extract 20–35% predatory commissions from gig 
 | **[docs/DATABASE_SCHEMA.sql](file:///Users/piyush/Documents/CODE/sih2026/docs/DATABASE_SCHEMA.sql)** | Complete PostgreSQL + PostGIS schema with spatial indices (`GIST`), triggers, and audit ledgers |
 | **[docs/SRS.md](file:///Users/piyush/Documents/CODE/sih2026/docs/SRS.md)** | Software Requirements Specification (IEEE 830 standard), user stories, pre-specified & custom problem workflows |
 | **[docs/ARCHITECTURE.md](file:///Users/piyush/Documents/CODE/sih2026/docs/ARCHITECTURE.md)** | Detailed High-Level & Low-Level System Design, booking state machine, and PostGIS geo-spatial routing |
-| **[docs/COOPERATIVE_MODEL.md](file:///Users/piyush/Documents/CODE/sih2026/docs/COOPERATIVE_MODEL.md)** | Fair wage economics, 85-10-5 split ledger, insurance/welfare scheme integrations & NCCT certification |
+| **[docs/COOPERATIVE_MODEL.md](file:///Users/piyush/Documents/CODE/sih2026/docs/COOPERATIVE_MODEL.md)** | Fair wage economics, 75-10-10-5 split ledger, insurance/welfare scheme integrations & NCCT certification |
 | **[docs/TECH_STACK.md](file:///Users/piyush/Documents/CODE/sih2026/docs/TECH_STACK.md)** | In-depth technology justification (Neon Postgres, Prisma ORM, Mobile-First WebApp, PostGIS) |
 | **[docs/API_SPEC.md](file:///Users/piyush/Documents/CODE/sih2026/docs/API_SPEC.md)** | REST & WebSocket API specification (OpenAPI standard) with quote submission & mock payment endpoints |
 | **[docs/AI_DEMAND_FORECASTING.md](file:///Users/piyush/Documents/CODE/sih2026/docs/AI_DEMAND_FORECASTING.md)** | Demand prediction models & fair-share gig distribution algorithm |
@@ -123,7 +124,7 @@ When a household encounters an unlisted or complex breakdown:
 When a repair takes significantly longer than scheduled or requires extra tasks (e.g. concealed conduit damage, structural chiseling, rusted pipe threading):
 1. **Worker Request:** Worker logs an extra labor charge with reason category (`EXCESSIVE_TIME`, `UNFORESEEN_COMPLICATION`), text justification, estimated extra minutes, and photo proof.
 2. **Customer Transparency:** Customer receives an in-app prompt with the exact breakdown and clicks **Approve** or **Decline**.
-3. **Bill Integration & Split:** Approved extra charges are added to the final invoice and automatically split under the **85-10-5 cooperative model** (85% worker, 10% society, 5% welfare).
+3. **Bill Integration & Split:** Approved extra charges are added to the final invoice and automatically split under the **75-10-10-5 cooperative model** (75% worker, 10% society, 10% platform, 5% welfare).
 
 ---
 

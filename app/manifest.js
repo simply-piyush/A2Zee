@@ -1,8 +1,8 @@
 export default function manifest() {
   return {
-    name: 'A2Zee - Cooperative Gig Services Platform',
-    short_name: 'A2Zee',
-    description: 'A2Zee - Your Need. Our People. One Platform. Cooperative Gig Services Platform for Household & Community Services (Ministry of Cooperation & NCCT)',
+    name: 'A2ZEE - Cooperative Gig Services Platform',
+    short_name: 'A2ZEE',
+    description: 'A2ZEE - Your Need. Our People. One Platform. Cooperative Gig Services Platform for Household & Community Services (Ministry of Cooperation & NCCT)',
     start_url: '/',
     id: '/',
     display: 'standalone',
@@ -56,7 +56,7 @@ export default function manifest() {
       {
         name: 'Admin Federation Portal',
         short_name: 'Admin',
-        description: 'Cooperative society governance and 85-10-5 split ledger',
+        description: 'Cooperative society governance and 75-10-10-5 split ledger',
         url: '/admin',
         icons: [{ src: '/icons/icon-192x192.png', sizes: '192x192' }],
       },

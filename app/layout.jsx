@@ -14,14 +14,14 @@ export const viewport = {
 };
 
 export const metadata = {
-  title: 'A2Zee - Your Need. Our People. One Platform.',
+  title: 'A2ZEE - Your Need. Our People. One Platform.',
   description: 'Cooperative Gig Services Platform for Household & Community Services (Ministry of Cooperation & NCCT)',
-  applicationName: 'A2Zee',
+  applicationName: 'A2ZEE',
   manifest: '/manifest.webmanifest',
   appleWebApp: {
     capable: true,
     statusBarStyle: 'black-translucent',
-    title: 'A2Zee',
+    title: 'A2ZEE',
   },
   formatDetection: {
     telephone: false,
@@ -52,7 +52,7 @@ export default function RootLayout({ children }) {
         <meta name="mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-        <meta name="apple-mobile-web-app-title" content="A2Zee" />
+        <meta name="apple-mobile-web-app-title" content="A2ZEE" />
         <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
       </head>
       <body className="min-h-screen flex flex-col bg-[#FFF6F0] text-[#0F172A] antialiased selection:bg-[#1F4072]/20 selection:text-[#1F4072] font-secondary font-normal scrollbar-none no-scrollbar">

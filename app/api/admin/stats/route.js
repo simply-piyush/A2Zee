@@ -8,7 +8,7 @@ export const dynamic = 'force-dynamic';
 
 /**
  * GET /api/admin/stats
- * Aggregates all bookings, workers, 85-10-5 revenue split, and ratings for Admin Dashboard
+ * Aggregates all bookings, workers, 75-10-10-5 revenue split, and ratings for Admin Dashboard
  * Scoped by cooperative if requested by a Cooperative Admin or via cooperativeId query param.
  * Uses single combined SQL CTE to execute in one round-trip
  * with a 3-second cache to serve high-frequency dashboard polling in <1ms.
@@ -34,7 +34,7 @@ export async function GET(request) {
           COUNT(CASE WHEN b.status = 'COMPLETED' OR p."paymentStatus" = 'SUCCESS' THEN 1 END)::int as "completedBookings",
           COUNT(CASE WHEN b."isEmergency" = true THEN 1 END)::int as "emergencyBookings",
           COALESCE(SUM(COALESCE(b."finalPrice", b."basePrice", 0)), 0)::float as "totalBookingsVolume",
-          COALESCE(SUM(CASE WHEN b.status = 'COMPLETED' OR p."paymentStatus" = 'SUCCESS' THEN ROUND(COALESCE(b."finalPrice", b."basePrice", 0) * 0.85, 2) ELSE 0 END), 0)::float as "totalWorkerEarnings"
+          COALESCE(SUM(CASE WHEN b.status = 'COMPLETED' OR p."paymentStatus" = 'SUCCESS' THEN ROUND(COALESCE(b."finalPrice", b."basePrice", 0) * 0.75, 2) ELSE 0 END), 0)::float as "totalWorkerEarnings"
         FROM "Booking" b
         LEFT JOIN "Payment" p ON b.id = p."bookingId"
         LEFT JOIN "Worker" w ON b."workerId" = w.id
@@ -150,13 +150,14 @@ export async function GET(request) {
     const customers = rawData.customers || [];
     const rawRecentBookings = rawData.recent_bookings || [];
 
-    // Calculate revenue splits
+    // Calculate revenue splits (75% Worker, 10% Society, 10% Platform, 5% Welfare Trust)
     const totalBookingsVolume = Number(agg.totalBookingsVolume || 0);
     const totalWorkerEarnings = Number(agg.totalWorkerEarnings || 0);
     const calculatedGross = totalBookingsVolume + totalWorkerEarnings;
     const displayGrossRevenue = calculatedGross > 0 ? calculatedGross : 142000;
-    const workerWallet85 = Math.round(displayGrossRevenue * 0.85 * 100) / 100;
+    const workerWallet75 = Math.round(displayGrossRevenue * 0.75 * 100) / 100;
     const societyOps10 = Math.round(displayGrossRevenue * 0.10 * 100) / 100;
+    const platformOps10 = Math.round(displayGrossRevenue * 0.10 * 100) / 100;
     const welfareTrust5 = Math.round(displayGrossRevenue * 0.05 * 100) / 100;
 
     // Ratings breakdown
@@ -201,8 +202,10 @@ export async function GET(request) {
         },
         revenueSplit: {
           totalGrossRevenue: displayGrossRevenue,
-          workerWallet85,
+          workerWallet75,
+          workerWallet85: workerWallet75, // Backwards compatibility
           societyOperations10: societyOps10,
+          platformOperations10: platformOps10,
           welfareTrust5,
         },
         cooperatives: cooperatives.map((c) => ({

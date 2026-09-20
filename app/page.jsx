@@ -113,7 +113,7 @@ export default function LandingPage() {
 
               <div className="space-y-4 font-secondary text-slate-600 text-sm sm:text-base leading-relaxed">
                 <p>
-                  A2Zee is India's first worker-owned cooperative gig platform uniting verified artisans across household trades. Founded under the guidance of the Ministry of Cooperation, we replace exploitative corporate gig commission cuts with an <strong>85% direct worker take-home formula</strong>.
+                  A2ZEE is India's first worker-owned cooperative gig platform uniting verified artisans across household trades. Founded under the guidance of the Ministry of Cooperation, we replace exploitative corporate gig commission cuts with an <strong>ethical 75-10-10-5 revenue formula (75% net worker take-home + 100% of tips)</strong>.
                 </p>
                 <p>
                   Every technician is an audited member-owner of their primary labour cooperative society. We provide locked social security, tool bank support, and transparent ₹150 base inspections so you always know your money goes directly to the people who build and repair your home.

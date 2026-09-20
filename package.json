@@ -2,7 +2,7 @@
   "name": "a2zee",
   "version": "1.0.0",
   "private": true,
-  "description": "A2Zee - Your Need. Our People. One Platform. Cooperative Gig Services Platform (Problem Statement 26089)",
+  "description": "A2ZEE - Your Need. Our People. One Platform. Cooperative Gig Services Platform (Problem Statement 26089)",
   "scripts": {
     "dev": "next dev",
     "build": "next build",

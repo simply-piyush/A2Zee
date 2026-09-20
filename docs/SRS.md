@@ -16,7 +16,7 @@ SahakarSeva bridges the gap between verified skilled cooperative workers (electr
 
 The platform guarantees:
 - Worker identity verification and NCCT skill certification.
-- Transparent cooperative pricing and an 85-10-5 revenue sharing model.
+- Transparent cooperative pricing and a 75-10-10-5 revenue sharing model.
 - Integrated social security and micro-insurance contributions per gig.
 - Geo-spatial proximity matching using open GIS standards.
 - Real-time billing and payment status updates.
@@ -96,8 +96,9 @@ SahakarSeva operates as a distributed multi-tenant platform:
     - Customer receives a real-time modal/push notification: *"Worker Ramesh Kumar requests ₹150 for +45 mins of additional conduit rewiring. Do you approve?"*
     - **Approval Action:** If customer clicks **Approve**, the extra charge is added to `extra_charges_total` and incorporated into the final invoice. If declined, worker completes only the initial agreed scope or contacts the primary society for mediation.
 - **FR-3.2 (Transparent Split Display):** Invoice displays cooperative contribution breakdown across the entire billable labor:
-  - 85% Provider Direct Earning (including 85% of approved extra charges)
-  - 10% Cooperative Society & Federation Ops
+  - 75% Provider Direct Earning (+ 100% of gratitude tips directly credited)
+  - 10% Primary Cooperative Society Operations
+  - 10% A2ZEE Platform Digital Infrastructure & AI Operations
   - 5% Worker Welfare & Healthcare Fund
 - **FR-3.3 (Mock Payment Processing - MVP):** 
   - Bill page provides an interactive "Pay Now" action simulating instant payment.

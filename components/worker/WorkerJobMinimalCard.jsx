@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button';
  * WorkerJobMinimalCard Component
  * Standard minimal card for assigned jobs:
  * - Minimal info only: Emergency/Standard pin, bold service title, truncated location with ...,
- *   scheduled time, and 85% worker payout.
+ *   scheduled time, and 75% worker payout.
  * - Clean Swiss-inspired minimal box without extraneous visual clutter.
  * - Mobile-friendly with overflow hidden & text-ellipsis.
  */
@@ -29,7 +29,7 @@ export function WorkerJobMinimalCard({
   const totalTariff = Number(booking.finalPrice || (basePrice + extraAmount + emergencySurcharge));
   const artisanShare = booking.workerPayout !== undefined && !isNaN(Number(booking.workerPayout))
     ? Math.round(Number(booking.workerPayout))
-    : Math.round(totalTariff * 0.85);
+    : Math.round(totalTariff * 0.75 + Number(booking.tipGratitude || 0));
 
   const address = booking.customerAddress || booking.address || 'Address on file';
   const serviceTitle = booking.serviceTitle || booking.service?.name || 'Assigned Household Service';

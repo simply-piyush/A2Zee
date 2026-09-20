@@ -278,7 +278,7 @@ export default function WorkerPage() {
 
   const currentMonthWelfare = useMemo(() => {
     const currentMonthKey = `${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}`;
-    const welfare = monthlyBreakdown[currentMonthKey]?.totalWelfare || (currentMonthEarningsNum * (0.05 / 0.85));
+    const welfare = monthlyBreakdown[currentMonthKey]?.totalWelfare || (currentMonthEarningsNum * (0.05 / 0.75));
     return welfare.toLocaleString('en-IN', {
       minimumFractionDigits: 2,
       maximumFractionDigits: 2,
@@ -657,7 +657,7 @@ export default function WorkerPage() {
       const baseNum = Number(selectedJob.basePrice || 0);
       const emergencySurcharge = selectedJob.isEmergency ? 100 : 0;
       const newFinalPrice = baseNum + updatedExtra + emergencySurcharge;
-      const newWorkerPayout = Math.round(newFinalPrice * 0.85 * 100) / 100;
+      const newWorkerPayout = Math.round((newFinalPrice * 0.75 + (selectedJob.tipGratitude || 0)) * 100) / 100;
       
       const updatedJob = {
         ...selectedJob,
@@ -731,7 +731,7 @@ export default function WorkerPage() {
     const extraNum = Number(selectedJob.extraAmount || selectedJob.additionalPrice || 0);
     const emergencySurcharge = selectedJob.isEmergency ? 100 : 0;
     const finalPrice = Number(selectedJob.finalPrice) || (baseNum + extraNum + emergencySurcharge);
-    const workerPayout = selectedJob.workerPayout !== undefined ? Number(selectedJob.workerPayout) : (finalPrice * 0.85);
+    const workerPayout = selectedJob.workerPayout !== undefined ? Number(selectedJob.workerPayout) : (finalPrice * 0.75 + (selectedJob.tipGratitude || 0));
 
     const updatedJob = { 
       ...selectedJob, 
@@ -829,7 +829,7 @@ export default function WorkerPage() {
     if (newStatus === 'IN_PROGRESS') {
       setNotice('Work marked IN PROGRESS on customer bill. Mid-work adjustments enabled.');
     } else if (newStatus === 'COMPLETED') {
-      setNotice('Job marked COMPLETED. Final bill generated and 85% payout settled directly to wallet!');
+      setNotice('Job marked COMPLETED. Final bill generated and 75% payout settled directly to wallet!');
     }
   };
 
@@ -1084,7 +1084,7 @@ export default function WorkerPage() {
         <div className="flex-1 flex flex-col w-full pb-16 animate-in fade-in duration-200">
           <TopHeaderBanner
             title="COOPERATIVE WALLET"
-            //subtitle="85% direct payouts, 5% welfare trust fund & settlements"
+            //subtitle="75% direct payouts, 5% welfare trust fund & settlements"
             onBack={() => handleViewChange('home')}
           />
 

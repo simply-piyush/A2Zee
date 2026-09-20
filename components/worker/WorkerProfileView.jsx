@@ -271,7 +271,7 @@ export function WorkerProfileView({
               <Wallet className="w-4 h-4 text-[#1F4072]" />
               <span>Direct Settlement Account</span>
             </h3>
-            <Badge variant="success" className="text-[10px]">Verified for 85% Payouts</Badge>
+            <Badge variant="success" className="text-[10px]">Verified for 75% Payouts</Badge>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs bg-slate-50 p-3.5 rounded-2xl border border-slate-200/70">

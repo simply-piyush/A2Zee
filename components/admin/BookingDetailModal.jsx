@@ -73,7 +73,7 @@ export function BookingDetailModal({
       time: isCompleted ? 'Concluded' : 'Upcoming',
       title: isCompleted ? (isPaid ? 'Completed & Paid' : 'Completed & Billed') : 'Work Completed',
       description: isCompleted 
-        ? 'Service successfully fulfilled and settled under 85-10-5 cooperative partitioning.' 
+        ? 'Service successfully fulfilled and settled under 75-10-10-5 cooperative partitioning.' 
         : 'Final bill verified and approved by customer upon satisfactory completion.',
     },
   ];
@@ -87,10 +87,12 @@ export function BookingDetailModal({
         ? [{ id: 'chg_1', reason: booking.extraChargeReason || 'Mid-Work Adjustments', amount: Number(booking.additionalPrice || booking.extraAmount) }]
         : []);
   const tipGratitude = Number(booking.tipGratitude || 0);
-  const finalPrice = Number(booking.finalPrice || (basePrice + emergencyFee + extraChargesList.reduce((s, c) => s + Number(c.amount || 0), 0) + tipGratitude));
-  const workerPayout85 = Math.round((finalPrice * 0.85) * 100) / 100;
-  const societyOps10 = Math.round((finalPrice * 0.10) * 100) / 100;
-  const welfareTrust5 = Math.round((finalPrice * 0.05) * 100) / 100;
+  const laborSubtotal = basePrice + emergencyFee + extraChargesList.reduce((s, c) => s + Number(c.amount || 0), 0);
+  const finalPrice = Number(booking.finalPrice || (laborSubtotal + tipGratitude));
+  const workerPayout75 = Math.round((laborSubtotal * 0.75 + tipGratitude) * 100) / 100;
+  const societyOps10 = Math.round((laborSubtotal * 0.10) * 100) / 100;
+  const platformOps10 = Math.round((laborSubtotal * 0.10) * 100) / 100;
+  const welfareTrust5 = Math.round((laborSubtotal * 0.05) * 100) / 100;
 
   return (
     <div className="fixed inset-0 z-[9999] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-200">
@@ -249,22 +251,25 @@ export function BookingDetailModal({
               </div>
             )}
 
-            {/* Itemized 85-10-5 Split Ledger */}
+            {/* Itemized 75-10-10-5 Split Ledger */}
             <div className="bg-white text-slate-900 rounded-2xl p-4 space-y-2 text-xs border border-blue-100">
               <div className="flex items-center justify-between font-bold border-b border-slate-100 pb-2">
                 <span className="text-[11px] uppercase tracking-wider text-[#1F4072]">
-                  Cooperative 85-10-5 Distribution
+                  A2ZEE 75-10-10-5 Distribution
                 </span>
-                
               </div>
 
               <div className="flex justify-between text-slate-600">
-                <span>Worker Take-Home (85%):</span>
-                <strong className="text-slate-900 font-extrabold">₹{workerPayout85.toFixed(2)}</strong>
+                <span>Worker Take-Home (75% + tips):</span>
+                <strong className="text-slate-900 font-extrabold">₹{workerPayout75.toFixed(2)}</strong>
               </div>
               <div className="flex justify-between text-slate-600">
                 <span>Primary Society Operations (10%):</span>
                 <strong className="text-slate-900 font-extrabold">₹{societyOps10.toFixed(2)}</strong>
+              </div>
+              <div className="flex justify-between text-slate-600">
+                <span>A2ZEE Platform Operations (10%):</span>
+                <strong className="text-slate-900 font-extrabold">₹{platformOps10.toFixed(2)}</strong>
               </div>
               <div className="flex justify-between text-slate-600">
                 <span>Social Security & PMSBY Trust (5%):</span>

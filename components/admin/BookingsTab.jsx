@@ -58,7 +58,7 @@ export function BookingsTab({
             </span>
           </div>
           <p className="text-xs text-slate-500 font-medium">
-            Monitor real-time gig dispatches, emergency fast-tracks, and 85-10-5 split records
+            Monitor real-time gig dispatches, emergency fast-tracks, and 75-10-10-5 split records
           </p>
         </div>
 

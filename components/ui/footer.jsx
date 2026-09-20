@@ -54,7 +54,7 @@ export function Footer() {
 
         {/* Bottom Legal & Tech Strip */}
         <div className="flex flex-col sm:flex-row justify-between items-center text-xs text-[#FFF6F0]/60 gap-3 pt-6 border-t border-white/10 font-secondary">
-          <p>© 2026 A2Zee Platform. Built for Labour Cooperative Federations & Primary Societies.</p>
+          <p>© 2026 A2ZEE Platform. Built for Labour Cooperative Federations & Primary Societies.</p>
           <div className="flex items-center gap-6">
             <span className="flex items-center gap-1.5 text-[#A8C7FA] font-semibold">
               <ShieldCheck className="w-3.5 h-3.5" />

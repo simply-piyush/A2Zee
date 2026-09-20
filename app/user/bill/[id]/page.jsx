@@ -122,10 +122,11 @@ export default function UserBillPage() {
     ? (Number(booking.finalPrice) || (serviceFee + emergencyFee + totalExtraAmount + currentTip)) 
     : (serviceFee + emergencyFee + totalExtraAmount + selectedTip);
 
-  // 85-10-5 Cooperative Split calculation
+  // 75-10-10-5 Cooperative Split calculation
   const totalLabor = serviceFee + emergencyFee + totalExtraAmount;
-  const workerPayout = Math.round((totalLabor * 0.85 + (isPaid ? currentTip : selectedTip)) * 100) / 100;
+  const workerPayout = Math.round((totalLabor * 0.75 + (isPaid ? currentTip : selectedTip)) * 100) / 100;
   const societyFund = Math.round(totalLabor * 0.10 * 100) / 100;
+  const platformFee = Math.round(totalLabor * 0.10 * 100) / 100;
   const welfareDeposit = Math.round(totalLabor * 0.05 * 100) / 100;
 
   const handleProceedToPayment = async () => {
@@ -350,18 +351,22 @@ export default function UserBillPage() {
               </div>
             </div>
 
-            {/* 85-10-5 Split Ledger Card */}
+            {/* 75-10-10-5 Split Ledger Card */}
             <div className="p-3 bg-white rounded-lg border border-emerald-200/60 text-xs space-y-1.5">
               <span className="font-bold text-slate-900 block text-[11px] uppercase tracking-wider">
-                Cooperative 85-10-5 Split Ledger
+                A2ZEE Cooperative 75-10-10-5 Split Ledger
               </span>
               <div className="flex justify-between text-slate-600">
-                <span>Worker Take-Home (85% + Tip):</span>
+                <span>Worker Take-Home (75% + Tip):</span>
                 <strong className="text-slate-900">₹{workerPayout.toFixed(2)}</strong>
               </div>
               <div className="flex justify-between text-slate-600">
                 <span>Primary Society Operations (10%):</span>
                 <strong className="text-slate-900">₹{societyFund.toFixed(2)}</strong>
+              </div>
+              <div className="flex justify-between text-slate-600">
+                <span>A2ZEE Platform Operations (10%):</span>
+                <strong className="text-slate-900">₹{platformFee.toFixed(2)}</strong>
               </div>
               <div className="flex justify-between text-slate-600">
                 <span>Social Security & PMSBY Trust (5%):</span>

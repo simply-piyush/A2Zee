@@ -19,28 +19,29 @@ India has over **30,000 Labour Cooperative Societies** with millions of skilled 
 
 ---
 
-## 2. The 85-10-5 Revenue & Split-Payout Engine
+## 2. The 75-10-10-5 Revenue & Split-Payout Engine
 
 Every transaction executed on the platform adheres to an immutable, transparent split:
 
 ```
-┌────────────────────────────────────────────────────────────────────────┐
-│                        TOTAL BILL AMOUNT: ₹1,000                       │
-├──────────────────────┬──────────────────────┬──────────────────────────┤
-│    85% (₹850.00)     │    10% (₹100.00)     │       5% (₹50.00)        │
-│   WORKER NET PAY     │   COOPERATIVE FUND   │   WORKER WELFARE FUND    │
-│  Instant UPI / Bank  │ Primary Society &    │ Health, Accident Bima    │
-│    Direct Payout     │ Federation Ops & R&D │ & Pension Annuity Trust  │
-└──────────────────────┴──────────────────────┴──────────────────────────┘
+┌────────────────────────────────────────────────────────────────────────────────────────┐
+│                               TOTAL BILL AMOUNT: ₹1,000                                │
+├──────────────────────┬──────────────────────┬─────────────────────┬────────────────────┤
+│    75% (₹750.00)     │    10% (₹100.00)     │    10% (₹100.00)    │    5% (₹50.00)     │
+│   WORKER NET PAY     │   COOPERATIVE FUND   │   A2ZEE PLATFORM    │  WELFARE TRUST     │
+│  Instant UPI / Bank  │ Primary Society &    │ Cloud, AI Forecast, │ PMSBY, Accident    │
+│  (+ 100% of Tips)    │ Tool Bank Leasing    │ Routing & Infra     │ & Pension Trust    │
+└──────────────────────┴──────────────────────┴─────────────────────┴────────────────────┘
 ```
 
-### Financial Comparison: Private Aggregator vs. SahakarSeva (₹1,000 Gig)
+### Financial Comparison: Private Aggregator vs. A2ZEE Cooperative (₹1,000 Gig)
 
-| Metric | Private Aggregator | SahakarSeva Platform | Advantage for Worker |
+| Metric | Private Aggregator | A2ZEE Platform | Advantage for Worker |
 | :--- | :--- | :--- | :--- |
-| **Worker Payout** | ₹680 – ₹750 (68-75%) | **₹850 (85%)** | **+ ₹100 – ₹170 more in pocket** |
-| **Platform / Admin Cut** | ₹250 – ₹320 (Profit) | **₹100 (Society Sustenance)** | Reinvested into local society tools & community |
-| **Social Security / Bima** | ₹0 (None) | **₹50 (Dedicated Pool)** | Full insurance & pension security |
+| **Worker Payout** | ₹650 – ₹700 (65-70%) | **₹750 (75%) + 100% Tips** | **Fair wage floor + tips kept whole** |
+| **Society Fund** | ₹0 (None) | **₹100 (10% Society)** | Reinvested into local tool banks & governance |
+| **Platform Ops** | ₹250 – ₹350 (Profit extraction) | **₹100 (10% Infra/AI)** | Transparent cap strictly for tech ops |
+| **Social Security / Bima** | ₹0 (None) | **₹50 (5% Welfare Pool)** | Full insurance (PMSBY) & pension security |
 | **Dividend Rights** | None | **Annual Patronage Dividend** | Share of annual cooperative surplus |
 | **Arbitration Rights** | Arbitrary Bot Banning | **Elected Cooperative Committee** | Dignified human grievance hearing |
 

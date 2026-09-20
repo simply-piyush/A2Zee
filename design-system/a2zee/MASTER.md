@@ -16,7 +16,7 @@
 | **Text Foreground** | `#1E1E1E` | `text-brand-dark` | `--foreground` | 15.6:1 on white (AAA accessible) |
 | **Muted Text** | `#757575` / `#4C4C4C` | `text-brand-muted` | `--muted` | 4.6:1 on white (AA accessible) |
 | **Dividers & Borders** | `#E6E6E6` | `border-brand-border` | `--border` | Structural visual dividers |
-| **Cooperative Emerald** | `#10B981` | `bg-emerald-600` | `--accent-emerald` | Success, Verified badges, 85% payout |
+| **Cooperative Emerald** | `#10B981` | `bg-emerald-600` | `--accent-emerald` | Success, Verified badges, 75% payout |
 | **Saffron Accent** | `#F97316` | `bg-amber-500` | `--accent-saffron` | Highlights, warnings, CTAs |
 
 ---

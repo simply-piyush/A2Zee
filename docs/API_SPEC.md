@@ -23,7 +23,7 @@
    - [4.4 POST /api/bookings/[id]/accept (Worker Accept)](#44-post-apibookingsidaccept)
    - [4.5 POST /api/bookings/[id]/reject (Cascading Reassignment)](#45-post-apibookingsidreject)
    - [4.6 POST /api/bookings/[id]/extra-charges (Mid-Work Adjustments)](#46-post-apibookingsidextra-charges)
-   - [4.7 POST /api/bookings/[id]/mock-pay (85-10-5 Split Settlement)](#47-post-apibookingsidmock-pay)
+   - [4.7 POST /api/bookings/[id]/mock-pay (75-10-10-5 Split Settlement)](#47-post-apibookingsidmock-pay)
    - [4.8 POST /api/bookings/[id]/review](#48-post-apibookingsidreview)
 5. [Artisans, Cooperatives & Schedule Endpoints](#5-artisans-cooperatives--schedule-endpoints)
    - [5.1 GET /api/workers/nearby (Radar & Candidate Ranking)](#51-get-apiworkersnearby)
@@ -272,7 +272,7 @@ Cooperative Administrator approves or rejects an artisan application.
 ```
 
 ### 6.3 GET `/api/admin/stats`
-Aggregates live bookings, workers directory, 85-10-5 split ledger, and average platform ratings.
+Aggregates live bookings, workers directory, 75-10-10-5 split ledger, and average platform ratings.
 - **Response (`200 OK`):**
 ```json
 {
@@ -288,8 +288,9 @@ Aggregates live bookings, workers directory, 85-10-5 split ledger, and average p
     },
     "revenueSplit": {
       "totalGrossRevenue": 142000,
-      "workerWallet85": 120700,
+      "workerWallet75": 106500,
       "societyOperations10": 14200,
+      "platformOperations10": 14200,
       "welfareTrust5": 7100
     },
     "cooperatives": [ ... ],

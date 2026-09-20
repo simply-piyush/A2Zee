@@ -27,7 +27,7 @@
 - **Body & Numerical Values:** `Inter` (Regular, Medium, SemiBold, 16px / 14px)
 
 ### Bill Breakdown Structure (Node `89:105`)
-Matches the cooperative 85-10-5 model and mid-work extra charges architecture:
+Matches the cooperative 75-10-10-5 model and mid-work extra charges architecture:
 - `Service fee`: Scheduled base tariff or agreed diagnosis quote
 - `Extra Time Fee`: Customer-approved mid-work time overrun charge
 - `Gst`: Government concession tax

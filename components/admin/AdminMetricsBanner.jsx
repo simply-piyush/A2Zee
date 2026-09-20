@@ -18,9 +18,10 @@ export function AdminMetricsBanner({
   onNavigateTab,
 }) {
   const grossVolume = Number(stats?.revenueSplit?.totalGrossRevenue || 0);
-  const worker85 = Number(stats?.revenueSplit?.workerWallet85 || Math.round(grossVolume * 0.85));
-  const welfare5 = Number(stats?.revenueSplit?.welfareTrust5 || Math.round(grossVolume * 0.05));
+  const worker75 = Number(stats?.revenueSplit?.workerWallet75 || stats?.revenueSplit?.workerWallet85 || Math.round(grossVolume * 0.75));
   const society10 = Number(stats?.revenueSplit?.societyOperations10 || Math.round(grossVolume * 0.10));
+  const platform10 = Number(stats?.revenueSplit?.platformOperations10 || Math.round(grossVolume * 0.10));
+  const welfare5 = Number(stats?.revenueSplit?.welfareTrust5 || Math.round(grossVolume * 0.05));
   
   const totalBookings = stats?.overview?.totalBookings || 0;
   const completedBookings = stats?.overview?.completedBookings || 0;
@@ -174,7 +175,7 @@ export function AdminMetricsBanner({
           </p>
         </div>
 
-        {/* KPI 4: 85-10-5 Welfare & Society Partition */}
+        {/* KPI 4: 75-10-10-5 Welfare, Society & Platform Partition */}
         <div 
           onClick={() => onNavigateTab && onNavigateTab('revenue')}
           className="bg-white rounded-2xl p-4 border border-slate-200/80 shadow-xs hover:shadow-md hover:border-[#1F4072]/30 transition-all cursor-pointer group"
@@ -189,14 +190,14 @@ export function AdminMetricsBanner({
           </div>
           <div className="mt-2 flex items-baseline gap-2">
             <span className="text-2xl font-extrabold text-slate-900 font-display">
-              ₹{(society10 + welfare5).toLocaleString()}
+              ₹{(society10 + platform10 + welfare5).toLocaleString()}
             </span>
             <span className="text-xs font-bold text-indigo-700 bg-indigo-50 px-1.5 py-0.5 rounded-md">
-              15% Retained
+              25% Retained
             </span>
           </div>
           <p className="text-[11px] text-slate-500 font-medium mt-1">
-            ₹{welfare5.toLocaleString()} trust pool • ₹{society10.toLocaleString()} local ops
+            ₹{society10.toLocaleString()} coop (10%) • ₹{platform10.toLocaleString()} plat (10%) • ₹{welfare5.toLocaleString()} welfare (5%)
           </p>
         </div>
 
@@ -227,17 +228,17 @@ export function AdminMetricsBanner({
                 ₹{grossVolume.toLocaleString()}
               </span>
               <span className="text-[11px] text-blue-100/80 font-mono tracking-widest mt-1 block">
-                FED-COOP-85-10-5 • BYLAW COMPLIANT
+                A2ZEE-COOP-75-10-10-5 • BYLAW COMPLIANT
               </span>
             </div>
 
             <div className="space-y-2 pt-2 border-t border-white/15">
               <div className="flex justify-between items-center text-xs text-blue-100/90">
-                <span>Artisan Wallets (85%):</span>
-                <strong className="text-white font-bold">₹{worker85.toLocaleString()}</strong>
+                <span>Artisan Wallets (75%):</span>
+                <strong className="text-white font-bold">₹{worker75.toLocaleString()}</strong>
               </div>
               <div className="w-full bg-white/15 rounded-full h-1.5 overflow-hidden">
-                <div className="bg-emerald-400 h-full rounded-full w-[85%]"></div>
+                <div className="bg-emerald-400 h-full rounded-full w-[75%]"></div>
               </div>
             </div>
           </div>

@@ -6,7 +6,7 @@ import { AdminCanvas } from '@/components/admin/AdminCanvas';
 import { AdminMetricsBanner } from '@/components/admin/AdminMetricsBanner';
 import { useAdmin } from '@/components/admin/AdminContext';
 
-export default function AdminPage() {
+export default function AdminOverviewPage() {
   const { stats, loadAdminData, isLoading } = useAdmin();
 
   return (

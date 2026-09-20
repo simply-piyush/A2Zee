@@ -52,11 +52,12 @@ export function WorkerWalletView({
     if (selectedMonthKey === 'ALL') {
       const allCompleted = assignedJobs.filter(j => j.status === 'COMPLETED');
       const totalPayout = allCompleted.reduce((sum, j) => {
-        const finalPrice = Number(j.finalPrice) || (Number(j.basePrice || 0) + Number(j.extraAmount || j.additionalPrice || 0) + (j.isEmergency ? 100 : 0));
-        return sum + (j.workerPayout !== undefined ? Number(j.workerPayout) : (finalPrice * 0.85));
+        const laborGross = Number(j.basePrice || 0) + Number(j.extraAmount || j.additionalPrice || 0) + (j.isEmergency ? 100 : 0);
+        const tipGratitude = Number(j.tipGratitude || 0);
+        return sum + (j.workerPayout !== undefined ? Number(j.workerPayout) : (laborGross * 0.75 + tipGratitude));
       }, 0);
       const totalGross = allCompleted.reduce((sum, j) => {
-        return sum + (Number(j.finalPrice) || (Number(j.basePrice || 0) + Number(j.extraAmount || j.additionalPrice || 0) + (j.isEmergency ? 100 : 0)));
+        return sum + (Number(j.finalPrice) || (Number(j.basePrice || 0) + Number(j.extraAmount || j.additionalPrice || 0) + (j.isEmergency ? 100 : 0) + Number(j.tipGratitude || 0)));
       }, 0);
 
       return {
@@ -79,7 +80,7 @@ export function WorkerWalletView({
       key: selectedMonthKey,
       label: new Date().toLocaleString('en-IN', { month: 'long', year: 'numeric' }),
       totalPayout: parseFloat(String(walletBalance || '0').replace(/,/g, '')) || 0,
-      totalGross: (parseFloat(String(walletBalance || '0').replace(/,/g, '')) || 0) / 0.85,
+      totalGross: (parseFloat(String(walletBalance || '0').replace(/,/g, '')) || 0) / 0.75,
       totalWelfare: parseFloat(String(welfareBalance || '0').replace(/,/g, '')) || 0,
       totalPlatform: 0,
       completedCount: 0,
@@ -157,16 +158,16 @@ export function WorkerWalletView({
         </div>
       </div>
 
-      {/* 85-5-10 Distribution Cards for Selected Month */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      {/* 75-10-10-5 Distribution Cards for Selected Month */}
+      <div className="flex flex-row justify-between  gap-5">
         
-        {/* Card 1: 85% Artisan Payout Wallet */}
-        <Card className="p-5 bg-white border-emerald-200 shadow-xs relative overflow-hidden">
+        {/* Card 1: 75% Artisan Payout Wallet */}
+        <Card className="p-5 flex-1 bg-white border-emerald-200 shadow-xs relative overflow-hidden">
           <div className="space-y-2">
             <div className="flex justify-between items-center">
               <span className="text-[11px] font-bold text-emerald-800 uppercase tracking-wider flex items-center gap-1.5 font-outfit">
                 <Wallet className="w-4 h-4 text-emerald-600" />
-                <span>85% Artisan Payout</span>
+                <span>75% Artisan Net</span>
               </span>
               <Badge variant="success" className="text-[10px]">
                 {currentSelectionData.label}
@@ -174,54 +175,35 @@ export function WorkerWalletView({
             </div>
             
             <div className="pt-1">
-              <span className="text-3xl font-extrabold text-emerald-600 font-outfit">
+              <span className="text-2xl sm:text-3xl font-extrabold text-emerald-600 font-outfit">
                 ₹{displayPayout}
               </span>
             </div>
-
-            
+            <p className="text-[10px] text-emerald-700 font-medium">+100% Tips Directly Credited</p>
           </div>
         </Card>
 
         {/* Card 2: 5% Cooperative Welfare Trust Fund */}
-        <Card className="p-5 bg-white border-indigo-200 shadow-xs relative overflow-hidden">
+        <Card className="p-5 flex-1 bg-white border-indigo-200 shadow-xs relative overflow-hidden">
           <div className="space-y-2">
             <div className="flex justify-between items-center">
               <span className="text-[11px] font-bold text-indigo-900 uppercase tracking-wider flex items-center gap-1.5 font-outfit">
                 <HeartHandshake className="w-4 h-4 text-indigo-600" />
-                <span>5% Welfare Trust Fund</span>
+                <span>5% Welfare Trust</span>
               </span>
-              <Badge variant="ncct" className="text-[10px]">Coop Trust</Badge>
+              <Badge variant="ncct" className="text-[10px]">PMSBY / Trust</Badge>
             </div>
 
             <div className="pt-1">
-              <span className="text-3xl font-extrabold text-indigo-700 font-outfit">
+              <span className="text-2xl sm:text-3xl font-extrabold text-indigo-700 font-outfit">
                 ₹{displayWelfare}
               </span>
             </div>
-
-            
+            <p className="text-[10px] text-indigo-600 font-medium">Social Security & Insurance</p>
           </div>
         </Card>
 
-        {/* Card 3: 10% Cooperative Maintenance Fee */}
-        <Card className="p-5 bg-white border-slate-200 shadow-xs relative overflow-hidden">
-          <div className="space-y-2">
-            <div className="flex justify-between items-center">
-              <span className="text-[11px] font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5 font-outfit">
-                <Building2 className="w-4 h-4 text-[#1F4072]" />
-                <span>10% Platform & Admin</span>
-              </span>
-              <Badge variant="secondary" className="text-[10px]">Fixed Cap</Badge>
-            </div>
-
-            <div className="pt-1">
-              <span className="text-3xl font-extrabold text-slate-700 font-outfit">10.0%</span>
-            </div>
-
-            
-          </div>
-        </Card>
+       
 
       </div>
 
@@ -246,7 +228,7 @@ export function WorkerWalletView({
                   <TableHead className="font-bold text-slate-700">Service & End Time</TableHead>
                   <TableHead className="font-bold text-slate-700">Base Tariff</TableHead>
                   <TableHead className="font-bold text-slate-700">Extra Charges</TableHead>
-                  <TableHead className="font-bold text-slate-700 text-right">Net 85% Payout</TableHead>
+                  <TableHead className="font-bold text-slate-700 text-right">Net 75% Payout</TableHead>
                   <TableHead className="font-bold text-slate-700 text-center">Status</TableHead>
                 </TableRow>
               </TableHeader>
@@ -256,7 +238,7 @@ export function WorkerWalletView({
                   const extraNum = Number(tx.extraAmount || tx.additionalPrice || 0);
                   const emergencyNum = tx.isEmergency ? 100 : 0;
                   const gross = Number(tx.finalPrice) || (baseNum + extraNum + emergencyNum);
-                  const payout = tx.workerPayout !== undefined ? Number(tx.workerPayout) : (gross * 0.85);
+                  const payout = tx.workerPayout !== undefined ? Number(tx.workerPayout) : (gross * 0.75 + Number(tx.tipGratitude || 0));
 
                   // Format scheduledEndTime
                   let dateLabel = 'Completed';
@@ -305,7 +287,7 @@ export function WorkerWalletView({
           ) : (
             <div className="p-8 text-center text-slate-500 space-y-1">
               <p className="font-bold text-sm text-slate-700 font-outfit">No Completed Jobs for {currentSelectionData.label}</p>
-              <p className="text-xs">When you mark active jobs as completed, their 85% payouts will automatically show here.</p>
+              <p className="text-xs">When you mark active jobs as completed, their 75% payouts will automatically show here.</p>
             </div>
           )}
         </CardContent>
