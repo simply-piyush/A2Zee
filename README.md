@@ -1,4 +1,4 @@
-# A2ZEE (SahakarSeva)
+# A2ZEE 
 ## Cooperative Gig Services Platform for Household & Community Services
 **Motto:** *"Your Need. Our People. One Platform."*  
 **Problem Statement ID:** 26089 | **Ministry of Cooperation** | **National Council for Cooperative Training (NCCT)**  
